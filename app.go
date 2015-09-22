@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 	"github.com/gorilla/mux"
-	"os"
+	"log"
 	"net"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -24,18 +24,18 @@ func whoamI(w http.ResponseWriter, req *http.Request) {
 	ifaces, _ := net.Interfaces()
 	// handle err
 	for _, i := range ifaces {
-	    addrs, _ := i.Addrs()
-	    // handle err
-	    for _, addr := range addrs {
-	        var ip net.IP
-	        switch v := addr.(type) {
-	        case *net.IPNet:
-	                ip = v.IP
-	        case *net.IPAddr:
-	                ip = v.IP
-	        }
-					fmt.Fprintln(w, "IP : ", ip)
-	    }
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			fmt.Fprintln(w, "IP : ", ip)
+		}
 	}
-  req.Write(w)
+	req.Write(w)
 }
