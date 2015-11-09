@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
@@ -19,6 +20,7 @@ var upgrader = websocket.Upgrader{
 func main() {
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/", whoamI)
+	http.HandleFunc("/api", api)
 	fmt.Println("Starting up on 80")
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
@@ -63,7 +65,6 @@ func whoamI(w http.ResponseWriter, req *http.Request) {
 	hostname, _ := os.Hostname()
 	fmt.Fprintln(w, "Hostname:", hostname)
 	ifaces, _ := net.Interfaces()
-	// handle err
 	for _, i := range ifaces {
 		addrs, _ := i.Addrs()
 		// handle err
@@ -79,4 +80,32 @@ func whoamI(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	req.Write(w)
+}
+
+func api(w http.ResponseWriter, req *http.Request) {
+	hostname, _ := os.Hostname()
+	data := struct {
+		Hostname string   `json:"hostname,omitempty"`
+		IP       []string `json:"ip,omitempty"`
+	}{
+		hostname,
+		[]string{},
+	}
+
+	ifaces, _ := net.Interfaces()
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			data.IP = append(data.IP, ip.String())
+		}
+	}
+	json.NewEncoder(w).Encode(data)
 }
