@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	// "github.com/pkg/profile"
@@ -135,6 +136,7 @@ type healthState struct {
 }
 
 var currentHealthState = healthState{200}
+var mutexHealthState = &sync.Mutex{}
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
@@ -145,7 +147,9 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(err.Error()))
 		} else {
 			fmt.Printf("Update health check status code [%d]\n", statusCode)
+			mutexHealthState.Lock()
 			currentHealthState.StatusCode = statusCode
+			mutexHealthState.Unlock()
 		}
 	} else {
 		w.WriteHeader(currentHealthState.StatusCode)
