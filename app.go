@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+
 	"github.com/gorilla/websocket"
 	// "github.com/pkg/profile"
 	"log"
@@ -32,6 +33,7 @@ func main() {
 	http.HandleFunc("/bench", benchHandler)
 	http.HandleFunc("/", whoamI)
 	http.HandleFunc("/api", api)
+	http.HandleFunc("/health", healthHandler)
 	fmt.Println("Starting up on port " + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -126,4 +128,26 @@ func api(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	json.NewEncoder(w).Encode(data)
+}
+
+type healthState struct {
+	StatusCode int
+}
+
+var currentHealthState = healthState{200}
+
+func healthHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPost {
+		var statusCode int
+		err := json.NewDecoder(req.Body).Decode(&statusCode)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+		} else {
+			fmt.Printf("Update health check status code [%d]\n", statusCode)
+			currentHealthState.StatusCode = statusCode
+		}
+	} else {
+		w.WriteHeader(currentHealthState.StatusCode)
+	}
 }
