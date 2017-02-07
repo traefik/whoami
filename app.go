@@ -136,7 +136,7 @@ type healthState struct {
 }
 
 var currentHealthState = healthState{200}
-var mutexHealthState = &sync.Mutex{}
+var mutexHealthState = &sync.RWMutex{}
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
@@ -148,10 +148,12 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		} else {
 			fmt.Printf("Update health check status code [%d]\n", statusCode)
 			mutexHealthState.Lock()
+			defer mutexHealthState.Unlock()
 			currentHealthState.StatusCode = statusCode
-			mutexHealthState.Unlock()
 		}
 	} else {
+		mutexHealthState.RLock()
+		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
 	}
 }
