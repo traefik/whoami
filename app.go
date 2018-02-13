@@ -35,7 +35,7 @@ func main() {
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
 	http.HandleFunc("/", whoami)
-	http.HandleFunc("/api", api)
+	http.HandleFunc("/api/", api)
 	http.HandleFunc("/health", healthHandler)
 	fmt.Println("Starting up on port " + port)
 	if len(cert) > 0 && len(key) > 0 {
