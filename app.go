@@ -47,10 +47,9 @@ func printBinary(s []byte) {
 	fmt.Printf("\n")
 }
 func benchHandler(w http.ResponseWriter, r *http.Request) {
-	// body := "Hello World\n"
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "text/plain")
-	// fmt.Fprint(w, body)
+	fmt.Fprint(w, "1")
 }
 func echoHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
