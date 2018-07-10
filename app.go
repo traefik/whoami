@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	yaml "gopkg.in/yaml.v2"
 	// "github.com/pkg/profile"
 	"log"
 	"net"
@@ -35,6 +36,8 @@ func main() {
 	http.HandleFunc("/", whoamI)
 	http.HandleFunc("/api", api)
 	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/version", version)
+
 	fmt.Println("Starting up on port " + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -155,4 +158,33 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
 	}
+}
+
+func version(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/version" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	resp := map[string]string{
+		"version": getEnv("WHOAMI_VERSION", "unkown"),
+	}
+
+	d, err := yaml.Marshal(resp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(d)
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
