@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	// "github.com/pkg/profile"
 	"log"
 	"net"
 	"net/http"
@@ -16,9 +15,13 @@ import (
 	"time"
 )
 
+var cert string
+var key string
 var port string
 
 func init() {
+	flag.StringVar(&cert, "cert", "tls.crt", "give me a certificate")
+	flag.StringVar(&key, "key", "tls.key", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
 }
 
@@ -28,7 +31,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	// defer profile.Start().Stop()
 	flag.Parse()
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
@@ -36,6 +38,9 @@ func main() {
 	http.HandleFunc("/api", api)
 	http.HandleFunc("/health", healthHandler)
 	fmt.Println("Starting up on port " + port)
+	if port == "443" {
+		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
+	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
