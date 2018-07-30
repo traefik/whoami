@@ -20,8 +20,8 @@ var key string
 var port string
 
 func init() {
-	flag.StringVar(&cert, "cert", "tls.crt", "give me a certificate")
-	flag.StringVar(&key, "key", "tls.key", "give me a key")
+	flag.StringVar(&cert, "cert", "", "give me a certificate")
+	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
 }
 
@@ -38,7 +38,7 @@ func main() {
 	http.HandleFunc("/api", api)
 	http.HandleFunc("/health", healthHandler)
 	fmt.Println("Starting up on port " + port)
-	if port == "443" {
+	if len(cert) > 0 && len(key) > 0 {
 		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
 	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
