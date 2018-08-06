@@ -34,7 +34,7 @@ func main() {
 	flag.Parse()
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoamI)
+	http.HandleFunc("/", whoami)
 	http.HandleFunc("/api", api)
 	http.HandleFunc("/health", healthHandler)
 	fmt.Println("Starting up on port " + port)
@@ -75,7 +75,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func whoamI(w http.ResponseWriter, req *http.Request) {
+func whoami(w http.ResponseWriter, req *http.Request) {
 	u, _ := url.Parse(req.URL.String())
 	queryParams := u.Query()
 	wait := queryParams.Get("wait")
