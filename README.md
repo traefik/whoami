@@ -3,7 +3,7 @@
 Tiny Go webserver that prints os information and HTTP request to output
 
 ```sh
-$ docker run -d -P --name iamfoo emilevauge/whoami
+$ docker run -d -P --name iamfoo containous/whoami
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
 $ curl "http://0.0.0.0:32769"
