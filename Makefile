@@ -1,3 +1,4 @@
+.PHONY: default build dependencies image
 
 default: build
 
