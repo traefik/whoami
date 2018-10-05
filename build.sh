@@ -1,2 +1,2 @@
 #!/bin/sh
-docker build -t emilevauge/whoami .
+docker build -t bee42/whoami .
