@@ -3,7 +3,7 @@
 Tiny Go webserver that prints os information and HTTP request to output
 
 ```sh
-$ docker run -d -P --name iamfoo emilevauge/whoami
+$ docker run -d -P --name iamfoo bee42/whoami:1.2.0
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
 $ curl "http://0.0.0.0:32769"
@@ -38,5 +38,5 @@ Accept: */*
 Setting version in 2.0.0 
 
 ```
-docker run -it --rm -p 8086:80 -e WHOAMI_VERSION=2.0.0-release emilevauge/whoami:2.0.0
+docker run -it --rm -p 8086:80 -e WHOAMI_VERSION=2.0.0-release bee42/whoami:2.0.0
 ```
