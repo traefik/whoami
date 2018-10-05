@@ -1,4 +1,4 @@
-ARG GOLANG_TARGET=${GOLANG_TARGET:-golang:1.10.3-stretch}
+ARG GOLANG_TARGET=${GOLANG_TARGET:-golang:1.11.0-stretch}
 ARG TARGET=${TARGET:-alpine:3.8}
 FROM ${GOLANG_TARGET} as build
 
@@ -16,7 +16,9 @@ RUN mkdir -p vendor && dep ensure
 RUN mkdir -p $OUTPUT_PATH && \
     GOOS=${OS} GOARCH=${ARCH} CGO_ENABLED=0 go build -a --installsuffix cgo --ldflags="-s" -o $OUTPUT_PATH/whoamI
 
-FROM ${TARGET} 
+FROM ${TARGET}
+LABEL maintainer nicals.mietz@bee42.com
+LABEL maintainer peter.rossbach@bee42.com
 COPY --from=build /output/whoamI /whoamI
 ENTRYPOINT ["/whoamI"]
 EXPOSE 80
