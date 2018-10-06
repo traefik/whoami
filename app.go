@@ -9,6 +9,9 @@ import (
 	"github.com/gorilla/websocket"
 	yaml "gopkg.in/yaml.v2"
 	// "github.com/pkg/profile"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"log"
 	"net"
 	"net/http"
@@ -33,10 +36,11 @@ func main() {
 	flag.Parse()
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoamI)
-	http.HandleFunc("/api", api)
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/version", version)
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/", prometheus.InstrumentHandlerFunc("whoamI", whoamI))
+	http.HandleFunc("/api", prometheus.InstrumentHandlerFunc("api", api))
 
 	fmt.Println("Starting up on port " + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

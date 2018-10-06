@@ -1,5 +1,7 @@
 # whoamI
 
+This is a fork from https://github.com/containous/whoami.
+
 Tiny Go webserver that prints os information and HTTP request to output
 
 ```sh
@@ -31,12 +33,39 @@ Accept: */*
 
 ### 2.0.0
 
-* `GET /version` prints podinfo version and git commit hash 
+* `GET /version` prints podinfo version and git commit hash
 
 ## Versions
 
-Setting version in 2.0.0 
+Setting version in 2.0.0
 
 ```
-docker run -it --rm -p 8086:80 -e WHOAMI_VERSION=2.0.0-release bee42/whoami:2.0.0
+$ docker run -d -p 8086:80 -e WHOAMI_VERSION=2.0.0-release bee42/whoami:2.0.0
+$ curl 127.0.0.1:8086/version
 ```
+
+## Metrics with prometheus
+
+* `GET /metrics` get prometheus metrics form go process
+
+### 2.1.0
+
+```
+$ docker run -d -p 8087:80 -e WHOAMI_VERSION=2.1.0-release bee42/whoami:2.1.0
+$ curl 127.0.0.1:8087/
+$ curl 127.0.0.1:8087/metrics
+```
+
+Currently the request of ´/api´ and ´/´ are measured.
+
+### Links of metrics
+
+* https://prometheus.io/docs/guides/go-application/
+* https://povilasv.me/prometheus-go-metrics/
+* https://github.com/alexellis/hash-browns
+* https://blog.alexellis.io/prometheus-monitoring/
+* https://alex.dzyoba.com/blog/go-prometheus-service/
+* https://ordina-jworks.github.io/monitoring/2016/09/23/Monitoring-with-Prometheus.html
+
+Regards
+Peter Rossbach (peter.rossbach@bee42.com)
