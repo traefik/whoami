@@ -1,8 +1,10 @@
 # whoami
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/containous/whoami.svg)](https://hub.docker.com/r/containous/whoami/)
+
 Tiny Go webserver that prints os information and HTTP request to output
 
-```sh
+```console
 $ docker run -d -P --name iamfoo containous/whoami
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
