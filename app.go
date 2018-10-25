@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -19,6 +23,14 @@ var cert string
 var key string
 var port string
 
+const (
+	_           = iota
+	KB int64 = 1 << (10 * iota)
+	MB
+	GB
+	TB
+)
+
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
@@ -32,6 +44,7 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	flag.Parse()
+	http.HandleFunc("/data", dataHandler)
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
 	http.HandleFunc("/", whoami)
@@ -74,7 +87,41 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+func dataHandler(w http.ResponseWriter, r *http.Request) {
+	u, _ := url.Parse(r.URL.String())
+	queryParams := u.Query()
 
+	size, err := strconv.ParseInt(queryParams.Get("size"), 10, 64)
+	if err != nil {
+		size = 1
+	}
+	if size < 0 {
+		size = 0
+	}
+
+	unit := queryParams.Get("unit")
+	switch (strings.ToLower(unit)) {
+		case "kb": size = size * KB
+		case "mb": size = size * MB
+		case "gb": size = size * GB
+		case "tb": size = size * TB
+	}
+
+	attachment, err := strconv.ParseBool(queryParams.Get("attachment"))
+	if err != nil {
+		attachment = false
+	}
+
+	content := fillContent(size)
+
+	if attachment {
+		const name = "data.txt"
+		w.Header().Add("Content-Disposition", "Attachment")
+		http.ServeContent(w, r, name, time.Now(), content)
+	} else {
+		io.Copy(w, content)
+	}
+}
 func whoami(w http.ResponseWriter, req *http.Request) {
 	u, _ := url.Parse(req.URL.String())
 	queryParams := u.Query()
@@ -160,4 +207,20 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
 	}
+}
+
+func fillContent(length int64) io.ReadSeeker {
+	charset := "-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	b := make([]byte, length, length)
+
+	for i := range b {
+		b[i] = charset[i % len(charset)]
+	}
+
+	if length > 0 {
+		b[0] = '|'
+		b[length-1] = '|'
+	}
+
+	return bytes.NewReader(b)
 }
