@@ -158,10 +158,16 @@ func api(w http.ResponseWriter, req *http.Request) {
 		Hostname string      `json:"hostname,omitempty"`
 		IP       []string    `json:"ip,omitempty"`
 		Headers  http.Header `json:"headers,omitempty"`
+		URL      string      `json:"url,omitempty"`
+		Host     string      `json:"host,omitempty"`
+		Method   string      `json:"method,omitempty"`
 	}{
 		hostname,
 		[]string{},
 		req.Header,
+		req.URL.RequestURI(),
+		req.Host,
+		req.Method,
 	}
 
 	ifaces, _ := net.Interfaces()
