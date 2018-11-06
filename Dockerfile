@@ -1,12 +1,12 @@
-FROM golang:1.10 as builder
-WORKDIR /go/src/github.com/containous/whoami
-COPY . .
-RUN go get -u github.com/golang/dep/cmd/dep
+FROM golang:1.11 as builder
+WORKDIR /go/whoami
+COPY Makefile go.mod go.sum ./
 RUN make dependencies
+COPY . .
 RUN make build
 
 # Create a minimal container to run a Golang static binary
 FROM scratch
-COPY --from=builder /go/src/github.com/containous/whoami/whoami .
+COPY --from=builder /go/whoami/whoami .
 ENTRYPOINT ["/whoami"]
 EXPOSE 80
