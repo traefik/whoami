@@ -1,7 +1,5 @@
 FROM golang:1.11 as builder
 WORKDIR /go/whoami
-COPY Makefile go.mod go.sum ./
-RUN make dependencies
 COPY . .
 RUN make build
 
