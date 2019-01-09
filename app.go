@@ -6,30 +6,30 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"strconv"
-	"strings"
-	"sync"
-
-	"github.com/gorilla/websocket"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
-var cert string
-var key string
-var port string
-
 const (
-	_           = iota
+	_        = iota
 	KB int64 = 1 << (10 * iota)
 	MB
 	GB
 	TB
 )
+
+var cert string
+var key string
+var port string
 
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
@@ -44,17 +44,47 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	flag.Parse()
+
 	http.HandleFunc("/data", dataHandler)
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoami)
-	http.HandleFunc("/api", api)
+	http.HandleFunc("/", whoamiHandler)
+	http.HandleFunc("/api", apiHandler)
 	http.HandleFunc("/health", healthHandler)
+
 	fmt.Println("Starting up on port " + port)
+
 	if len(cert) > 0 && len(key) > 0 {
 		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
 	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func benchHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprint(w, "1")
+}
+
+func echoHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+
+		printBinary(p)
+		err = conn.WriteMessage(messageType, p)
+		if err != nil {
+			return
+		}
+	}
 }
 
 func printBinary(s []byte) {
@@ -64,29 +94,7 @@ func printBinary(s []byte) {
 	}
 	fmt.Printf("\n")
 }
-func benchHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprint(w, "1")
-}
-func echoHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-		printBinary(p)
-		err = conn.WriteMessage(messageType, p)
-		if err != nil {
-			return
-		}
-	}
-}
+
 func dataHandler(w http.ResponseWriter, r *http.Request) {
 	u, _ := url.Parse(r.URL.String())
 	queryParams := u.Query()
@@ -100,11 +108,15 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	unit := queryParams.Get("unit")
-	switch (strings.ToLower(unit)) {
-		case "kb": size = size * KB
-		case "mb": size = size * MB
-		case "gb": size = size * GB
-		case "tb": size = size * TB
+	switch strings.ToLower(unit) {
+	case "kb":
+		size = size * KB
+	case "mb":
+		size = size * MB
+	case "gb":
+		size = size * GB
+	case "tb":
+		size = size * TB
 	}
 
 	attachment, err := strconv.ParseBool(queryParams.Get("attachment"))
@@ -115,25 +127,30 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	content := fillContent(size)
 
 	if attachment {
-		const name = "data.txt"
 		w.Header().Add("Content-Disposition", "Attachment")
-		http.ServeContent(w, r, name, time.Now(), content)
-	} else {
-		io.Copy(w, content)
+		http.ServeContent(w, r, "data.txt", time.Now(), content)
+		return
+	}
+
+	if _, err := io.Copy(w, content); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
-func whoami(w http.ResponseWriter, req *http.Request) {
+
+func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 	u, _ := url.Parse(req.URL.String())
-	queryParams := u.Query()
-	wait := queryParams.Get("wait")
+	wait := u.Query().Get("wait")
 	if len(wait) > 0 {
 		duration, err := time.ParseDuration(wait)
 		if err == nil {
 			time.Sleep(duration)
 		}
 	}
+
 	hostname, _ := os.Hostname()
 	fmt.Fprintln(w, "Hostname:", hostname)
+
 	ifaces, _ := net.Interfaces()
 	for _, i := range ifaces {
 		addrs, _ := i.Addrs()
@@ -149,11 +166,16 @@ func whoami(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintln(w, "IP:", ip)
 		}
 	}
-	req.Write(w)
+
+	if err := req.Write(w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
-func api(w http.ResponseWriter, req *http.Request) {
+func apiHandler(w http.ResponseWriter, req *http.Request) {
 	hostname, _ := os.Hostname()
+
 	data := struct {
 		Hostname string      `json:"hostname,omitempty"`
 		IP       []string    `json:"ip,omitempty"`
@@ -162,12 +184,12 @@ func api(w http.ResponseWriter, req *http.Request) {
 		Host     string      `json:"host,omitempty"`
 		Method   string      `json:"method,omitempty"`
 	}{
-		hostname,
-		[]string{},
-		req.Header,
-		req.URL.RequestURI(),
-		req.Host,
-		req.Method,
+		Hostname: hostname,
+		IP:       []string{},
+		Headers:  req.Header,
+		URL:      req.URL.RequestURI(),
+		Host:     req.Host,
+		Method:   req.Method,
 	}
 
 	ifaces, _ := net.Interfaces()
@@ -185,29 +207,34 @@ func api(w http.ResponseWriter, req *http.Request) {
 			data.IP = append(data.IP, ip.String())
 		}
 	}
-	json.NewEncoder(w).Encode(data)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 type healthState struct {
 	StatusCode int
 }
 
-var currentHealthState = healthState{200}
+var currentHealthState = healthState{http.StatusOK}
 var mutexHealthState = &sync.RWMutex{}
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
 		var statusCode int
-		err := json.NewDecoder(req.Body).Decode(&statusCode)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-		} else {
-			fmt.Printf("Update health check status code [%d]\n", statusCode)
-			mutexHealthState.Lock()
-			defer mutexHealthState.Unlock()
-			currentHealthState.StatusCode = statusCode
+
+		if err := json.NewDecoder(req.Body).Decode(&statusCode); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
+
+		fmt.Printf("Update health check status code [%d]\n", statusCode)
+
+		mutexHealthState.Lock()
+		defer mutexHealthState.Unlock()
+		currentHealthState.StatusCode = statusCode
 	} else {
 		mutexHealthState.RLock()
 		defer mutexHealthState.RUnlock()
@@ -220,7 +247,7 @@ func fillContent(length int64) io.ReadSeeker {
 	b := make([]byte, length, length)
 
 	for i := range b {
-		b[i] = charset[i % len(charset)]
+		b[i] = charset[i%len(charset)]
 	}
 
 	if length > 0 {
