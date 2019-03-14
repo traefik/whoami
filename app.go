@@ -85,8 +85,9 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: mux,
+		Addr:      ":" + port,
+		TLSConfig: &tls.Config{ClientAuth: tls.RequestClientCert},
+		Handler:   mux,
 	}
 
 	if ca != "" {
@@ -230,6 +231,13 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = fmt.Fprintln(w, "RemoteAddr:", r.RemoteAddr)
+
+	if r.TLS != nil {
+		for i, cert := range r.TLS.PeerCertificates {
+			fmt.Fprintf(w, "Certificate[%d] Subject: %v\n", i, cert.Subject)
+		}
+	}
+
 	if err := r.Write(w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
