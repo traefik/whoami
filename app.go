@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -55,7 +56,13 @@ func main() {
 	fmt.Println("Starting up on port " + port)
 
 	if len(cert) > 0 && len(key) > 0 {
-		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
+		server := &http.Server{
+			Addr: ":"+port,
+			TLSConfig: &tls.Config{
+				ClientAuth: tls.RequestClientCert,
+			},
+		}
+		log.Fatal(server.ListenAndServeTLS(cert, key))
 	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -164,6 +171,12 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 				ip = v.IP
 			}
 			fmt.Fprintln(w, "IP:", ip)
+		}
+	}
+
+	if req.TLS != nil && len(req.TLS.PeerCertificates) > 0 {
+		for i, cert := range req.TLS.PeerCertificates {
+			fmt.Fprintf(w, "Certificate[%d] Subject: %v\n", i, cert.Subject)
 		}
 	}
 
