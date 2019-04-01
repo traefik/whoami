@@ -34,7 +34,7 @@ var port string
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
-	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&port, "port", "8080", "give me a port number")
 }
 
 var upgrader = websocket.Upgrader{
