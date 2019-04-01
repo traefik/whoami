@@ -7,4 +7,5 @@ RUN make build
 FROM scratch
 COPY --from=builder /go/whoami/whoami .
 ENTRYPOINT ["/whoami"]
-EXPOSE 80
+USER 100
+EXPOSE 8080
