@@ -63,7 +63,7 @@ func main() {
 func benchHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprint(w, "1")
+	_, _ = fmt.Fprint(w, "1")
 }
 
 func echoHandler(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +149,7 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	hostname, _ := os.Hostname()
-	fmt.Fprintln(w, "Hostname:", hostname)
+	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
 
 	ifaces, _ := net.Interfaces()
 	for _, i := range ifaces {
@@ -163,10 +163,11 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			fmt.Fprintln(w, "IP:", ip)
+			_, _ = fmt.Fprintln(w, "IP:", ip)
 		}
 	}
 
+	_, _ = fmt.Fprintln(w, "RemoteAddr:", req.RemoteAddr)
 	if err := req.Write(w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -204,7 +205,9 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			data.IP = append(data.IP, ip.String())
+			if ip != nil {
+				data.IP = append(data.IP, ip.String())
+			}
 		}
 	}
 
