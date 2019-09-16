@@ -1,0 +1,26 @@
+language: go
+
+go:
+  - "1.x"
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+
+env:
+  - GO111MODULE=on
+
+install:
+  - go mod tidy
+  - git diff --exit-code go.mod
+  - git diff --exit-code go.sum
+  - go mod download
+
+script:
+  - make build
+  - make image
