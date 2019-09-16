@@ -28,8 +28,10 @@ Tiny Go webserver that prints os information and HTTP request to output
 
 ```console
 $ docker run -d -P --name iamfoo containous/whoami
+
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
+
 $ curl "http://0.0.0.0:32769"
 Hostname :  6e0030e67d6a
 IP :  127.0.0.1
@@ -40,4 +42,24 @@ GET / HTTP/1.1
 Host: 0.0.0.0:32769
 User-Agent: curl/7.35.0
 Accept: */*
+```
+
+```console
+# update health check status
+$ curl -H "Content-Type: application/json" -X POST -d '500' http://localhost:80/health
+
+# calls the health check
+$ curl -v http://localhost:8082/health
+*   Trying ::1:80...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 80 (#0)
+> GET /health HTTP/1.1
+> Host: localhost:80
+> User-Agent: curl/7.65.3
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 500 Internal Server Error
+< Date: Mon, 16 Sep 2019 22:52:40 GMT
+< Content-Length: 0
 ```
