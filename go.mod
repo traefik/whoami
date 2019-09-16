@@ -1,5 +1,5 @@
 module github.com/containous/whoami
 
-go 1.12
+go 1.13
 
-require github.com/gorilla/websocket v1.2.0
+require github.com/gorilla/websocket v1.4.1
