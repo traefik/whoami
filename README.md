@@ -45,11 +45,11 @@ Accept: */*
 ```
 
 ```console
-# update health check status
-$ curl -H "Content-Type: application/json" -X POST -d '500' http://localhost:80/health
+# updates health check status
+$ curl -X POST -d '500' http://localhost:80/health
 
 # calls the health check
-$ curl -v http://localhost:8082/health
+$ curl -v http://localhost:80/health
 *   Trying ::1:80...
 * TCP_NODELAY set
 * Connected to localhost (::1) port 80 (#0)
