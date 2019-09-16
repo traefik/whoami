@@ -19,6 +19,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Units
 const (
 	_        = iota
 	KB int64 = 1 << (10 * iota)
@@ -110,13 +111,13 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	unit := queryParams.Get("unit")
 	switch strings.ToLower(unit) {
 	case "kb":
-		size = size * KB
+		size *= KB
 	case "mb":
-		size = size * MB
+		size *= MB
 	case "gb":
-		size = size * GB
+		size *= GB
 	case "tb":
-		size = size * TB
+		size *= TB
 	}
 
 	attachment, err := strconv.ParseBool(queryParams.Get("attachment"))
@@ -248,7 +249,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 
 func fillContent(length int64) io.ReadSeeker {
 	charset := "-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, length, length)
+	b := make([]byte, length)
 
 	for i := range b {
 		b[i] = charset[i%len(charset)]

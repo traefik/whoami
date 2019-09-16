@@ -7,6 +7,10 @@ cache:
   directories:
     - $GOPATH/pkg/mod
 
+branches:
+  only:
+    - master
+
 notifications:
   email:
     on_success: never
@@ -15,6 +19,11 @@ notifications:
 env:
   - GO111MODULE=on
 
+before_install:
+  # Install linters and misspell
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin ${GOLANGCI_LINT_VERSION}
+  - golangci-lint --version
+
 install:
   - go mod tidy
   - git diff --exit-code go.mod
@@ -22,5 +31,5 @@ install:
   - go mod download
 
 script:
-  - make build
+  - make
   - make image
