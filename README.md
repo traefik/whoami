@@ -1,16 +1,11 @@
 # whoami
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/containous/whoami.svg)](https://hub.docker.com/r/containous/whoami/)
+[![Build Status](https://travis-ci.com/containous/whoami.svg?branch=master)](https://travis-ci.com/containous/whoami)
 
 Tiny Go webserver that prints os information and HTTP request to output
 
 ## Usage
-
-### Flags
-
-- `cert`: give me a certificate.
-- `key`: give me a key.
-- `port`: give me a port number. (default: 80)
 
 ### Paths
 
@@ -22,6 +17,12 @@ Tiny Go webserver that prints os information and HTTP request to output
 - `/health`: heath check
     - `GET`, `HEAD`, ...: returns a response with the status code defined by the `POST`
     - `POST`: changes the status code of the `GET` (`HEAD`, ...) response.
+
+### Flags
+
+- `cert`: give me a certificate.
+- `key`: give me a key.
+- `port`: give me a port number. (default: 80)
 
 ## Examples
 
