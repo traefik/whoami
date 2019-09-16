@@ -4,6 +4,27 @@
 
 Tiny Go webserver that prints os information and HTTP request to output
 
+## Usage
+
+### Flags
+
+- `cert`: give me a certificate.
+- `key`: give me a key.
+- `port`: give me a port number. (default: 80)
+
+### Paths
+
+- `/data?size=n`: creates a response with a size `n`.
+- `/echo`: webSocket echo.
+- `/bench`: always return the same response (`1`).
+- `/`: returns the whoami information (request and network information).
+- `/api`: returns the whoami information as JSON.
+- `/health`: heath check
+    - `GET`, `HEAD`, ...: returns a response with the status code defined by the `POST`
+    - `POST`: changes the status code of the `GET` (`HEAD`, ...) response.
+
+## Examples
+
 ```console
 $ docker run -d -P --name iamfoo containous/whoami
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
