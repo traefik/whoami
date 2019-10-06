@@ -12,10 +12,8 @@ COPY go.sum .
 RUN GO111MODULE=on GOPROXY=https://proxy.golang.org go mod download
 
 COPY . .
+RUN GOARCH={{ .GoARCH }} GOARM={{ .GoARM }} make build
 
-RUN make build
-
-# Create a minimal container to run a Golang static binary
 FROM scratch
 
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
