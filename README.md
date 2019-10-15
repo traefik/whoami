@@ -22,7 +22,8 @@ Tiny Go webserver that prints os information and HTTP request to output
 
 - `cert`: give me a certificate.
 - `key`: give me a key.
-- `port`: give me a port number. (default: 80)
+- `port`: give me a port number (default: 80).
+- `metrics`: enable collecting metrics (default: disabled). When enabled, request metrics are available using the `/debug/vars` request path.  
 
 ## Examples
 
