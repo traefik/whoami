@@ -149,6 +149,10 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	if value, ok := os.LookupEnv("BLUE_GREEN"); ok {
+		_, _ = fmt.Fprintln(w, "Environment (BLUE_GREEN):", value)
+    }
+
 	hostname, _ := os.Hostname()
 	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
 

@@ -24,6 +24,25 @@ Tiny Go webserver that prints os information and HTTP request to output
 - `key`: give me a key.
 - `port`: give me a port number. (default: 80)
 
+
+## Environment
+
+Optionally run with environment variable `BLUE_GREEN`, the content will be displayed in the `/` call.
+
+```console
+$ docker run -d -e "BLUE_GREEN=blue" -p 8080:80 whoami
+
+$ curl localhost:8080/whoami
+Environment (BLUE_GREEN): blue
+Hostname: 88e638611554
+IP: 127.0.0.1
+IP: 172.17.0.2
+RemoteAddr: 172.17.0.1:49464
+GET /whoami HTTP/1.1
+Host: localhost:8080
+User-Agent: curl/7.64.1
+Accept: */*
+```
 ## Examples
 
 ```console
