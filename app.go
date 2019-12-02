@@ -31,11 +31,13 @@ const (
 var cert string
 var key string
 var port string
+var prefix string
 
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&prefix, "prefix", "", "give me a prefix")
 }
 
 var upgrader = websocket.Upgrader{
@@ -46,14 +48,17 @@ var upgrader = websocket.Upgrader{
 func main() {
 	flag.Parse()
 
-	http.HandleFunc("/data", dataHandler)
-	http.HandleFunc("/echo", echoHandler)
-	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoamiHandler)
-	http.HandleFunc("/api", apiHandler)
-	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc(prefix + "/data", dataHandler)
+	http.HandleFunc(prefix + "/echo", echoHandler)
+	http.HandleFunc(prefix + "/bench", benchHandler)
+	http.HandleFunc(prefix + "/", whoamiHandler)
+	http.HandleFunc(prefix + "/api", apiHandler)
+	http.HandleFunc(prefix + "/health", healthHandler)
 
 	fmt.Println("Starting up on port " + port)
+	if len(prefix) > 0 {
+		fmt.Println("Using prefix " + prefix)
+	}
 
 	if len(cert) > 0 && len(key) > 0 {
 		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
