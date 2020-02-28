@@ -25,11 +25,13 @@
   disable = [
     "maligned",
     "lll",
-    "gas",
+    "gosec",
     "dupl",
     "prealloc",
     "gochecknoglobals",
     "gochecknoinits",
+    "gomnd",
+    "wsl",
   ]
 
 [issues]
