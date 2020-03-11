@@ -23,6 +23,7 @@ Tiny Go webserver that prints os information and HTTP request to output
 - `cert`: give me a certificate.
 - `key`: give me a key.
 - `port`: give me a port number. (default: 80)
+- `name`: give me a name. (it can be also defined with `WHOAMI_NAME` environment variable)
 
 ## Examples
 
@@ -62,4 +63,8 @@ $ curl -v http://localhost:80/health
 < HTTP/1.1 500 Internal Server Error
 < Date: Mon, 16 Sep 2019 22:52:40 GMT
 < Content-Length: 0
+```
+
+```console
+docker run -d -P -v ./certs:/certs --name iamfoo containous/whoami --cert /certs/cert.cer --key /certs/key.key
 ```
