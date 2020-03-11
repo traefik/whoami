@@ -31,11 +31,13 @@ const (
 var cert string
 var key string
 var port string
+var name string
 
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 }
 
 var upgrader = websocket.Upgrader{
@@ -147,6 +149,10 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		if err == nil {
 			time.Sleep(duration)
 		}
+	}
+
+	if name != "" {
+		_, _ = fmt.Fprintln(w, "Name:", name)
 	}
 
 	hostname, _ := os.Hostname()
