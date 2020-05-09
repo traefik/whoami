@@ -19,7 +19,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Units
+// Units.
 const (
 	_        = iota
 	KB int64 = 1 << (10 * iota)
