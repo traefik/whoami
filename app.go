@@ -191,6 +191,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL      string      `json:"url,omitempty"`
 		Host     string      `json:"host,omitempty"`
 		Method   string      `json:"method,omitempty"`
+		Name     string      `json:"name,omitempty"`
 	}{
 		Hostname: hostname,
 		IP:       []string{},
@@ -198,6 +199,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL:      req.URL.RequestURI(),
 		Host:     req.Host,
 		Method:   req.Method,
+		Name:     name,
 	}
 
 	ifaces, _ := net.Interfaces()
