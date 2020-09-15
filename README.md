@@ -1,7 +1,7 @@
 # whoami
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/containous/whoami.svg)](https://hub.docker.com/r/containous/whoami/)
-[![Build Status](https://travis-ci.com/containous/whoami.svg?branch=master)](https://travis-ci.com/containous/whoami)
+[![Docker Pulls](https://img.shields.io/docker/pulls/traefik/whoami.svg)](https://hub.docker.com/r/traefik/whoami/)
+[![Build Status](https://travis-ci.com/traefik/whoami.svg?branch=master)](https://travis-ci.com/traefik/whoami)
 
 Tiny Go webserver that prints os information and HTTP request to output
 
@@ -28,7 +28,7 @@ Tiny Go webserver that prints os information and HTTP request to output
 ## Examples
 
 ```console
-$ docker run -d -P --name iamfoo containous/whoami
+$ docker run -d -P --name iamfoo traefik/whoami
 
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
@@ -66,5 +66,5 @@ $ curl -v http://localhost:80/health
 ```
 
 ```console
-docker run -d -P -v ./certs:/certs --name iamfoo containous/whoami --cert /certs/cert.cer --key /certs/key.key
+docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/cert.cer --key /certs/key.key
 ```
