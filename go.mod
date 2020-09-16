@@ -1,4 +1,4 @@
-module github.com/containous/whoami
+module github.com/traefik/whoami
 
 go 1.13
 
