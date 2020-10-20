@@ -1,0 +1,121 @@
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@6.10.0
+  deploy: finalcad/deploy-eks-app@0.3.0
+common-build-deploy: &COMMON_BUILD_DEPLOY
+    repo: jphgt/whoami
+default_build: &DEFAULT_BUILD
+    create-repo: true
+    tag: 'latest,${CIRCLE_SHA1}'
+    path: ./
+    dockerfile: Dockerfile
+    account-url: AWS_ECR_ACCOUNT_URL
+    aws-access-key-id: AWS_ACCESS_KEY_ID
+    aws-secret-access-key: AWS_SECRET_ACCESS_KEY 
+    region: AWS_DEFAULT_REGION
+
+commands:
+    docker-login:
+        description: Login to Docker registries
+        steps:
+            - run:
+                name: Login Docker Github.com
+                command: echo ${GITHUB_TOKEN} | docker login docker.pkg.github.com --username dummy_user --password-stdin
+            - run:
+                name: login to https://hub.docker.com/
+                command: |
+                    echo ${DOCKERHUB_ACCESS_TOKEN} | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
+    docker-login-fail:
+        description: Login to Docker registries
+        steps:
+            - run:
+                name: Login Docker Github.com
+                command: echo ${GITHUB_TOKEN} | docker login docker.pkg.github.com --username dummy_user --password-stdin
+            - run:
+                name: login to https://hub.docker.com/
+                command: |
+                    echo ${DOCKERHUB_ACCESS_TOKEN}AAA | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
+
+executors:
+    default-image-docker:
+        machine:
+            image: ubuntu-1604:202004-01
+
+jobs:
+    build_app:
+        executor: default-image-docker
+        steps:
+            - docker-login-fail
+            - aws-ecr/build-and-push-image:
+                <<: *DEFAULT_BUILD
+                <<: *COMMON_BUILD_DEPLOY                
+
+workflows:
+    version: 2
+    build:
+        jobs:
+        ###### DEPLOY TO SANDBOX ################################# 
+            - build_app:
+                name: build-and-push-image-sandbox
+                context: 
+                    - ecr-sandbox
+                    - dockerhub
+                requires:
+                    - api
+            - deploy/deploy-app:
+                <<: *COMMON_BUILD_DEPLOY
+                context: 
+                    - ecr-sandbox
+                    - dockerhub
+                regions: eu-central-1
+                requires:
+                    - build-and-push-image-sandbox
+            # ###### DEPLOY TO STAGING #################################
+            # - build_app:
+            #     name: build-and-push-image-staging
+            #     context: 
+            #         - ecr-staging
+            #         - dockerhub
+            #     requires:
+            #         - api                
+            #     filters:
+            #         branches:
+            #             only:
+            #                 - staging
+            # - deploy/deploy-app:
+            #     <<: *COMMON_BUILD_DEPLOY
+            #     context: 
+            #         - ecr-staging
+            #         - dockerhub
+            #     regions: eu-central-1
+            #     requires:
+            #     - build-and-push-image-staging
+            #     filters:
+            #         branches:
+            #             only:
+            #                 - staging 
+            # ###### DEPLOY TO PRODUCTION #################################
+            # - build_app:
+            #     name: build-and-push-image-production
+            #     context: 
+            #         - ecr-production
+            #         - dockerhub
+            #     requires:
+            #         - api                
+            #     filters:
+            #         branches:
+            #             only:
+            #                 - master
+            # - deploy/deploy-app:
+            #     <<: *COMMON_BUILD_DEPLOY
+            #     context: 
+            #         - ecr-production
+            #         - dockerhub
+            #     regions: eu-central-1
+            #     requires:
+            #     - build-and-push-image-production
+            #     filters:
+            #         branches:
+            #             only:
+            #                 - master 
