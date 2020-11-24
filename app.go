@@ -20,7 +20,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Units
+// Units.
 const (
 	_        = iota
 	KB int64 = 1 << (10 * iota)
@@ -32,6 +32,7 @@ const (
 var cert string
 var key string
 var port string
+var name string
 var metricsEnabled bool
 
 var totalRequestCount expvarInt
@@ -42,6 +43,7 @@ func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 	flag.BoolVar(&metricsEnabled, "metrics", false, "enable collecting metrics")
 }
 
@@ -157,6 +159,10 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	if name != "" {
+		_, _ = fmt.Fprintln(w, "Name:", name)
+	}
+
 	hostname, _ := os.Hostname()
 	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
 
@@ -193,6 +199,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL      string      `json:"url,omitempty"`
 		Host     string      `json:"host,omitempty"`
 		Method   string      `json:"method,omitempty"`
+		Name     string      `json:"name,omitempty"`
 	}{
 		Hostname: hostname,
 		IP:       []string{},
@@ -200,6 +207,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL:      req.URL.RequestURI(),
 		Host:     req.Host,
 		Method:   req.Method,
+		Name:     name,
 	}
 
 	ifaces, _ := net.Interfaces()

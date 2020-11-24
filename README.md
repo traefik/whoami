@@ -1,7 +1,7 @@
 # whoami
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/containous/whoami.svg)](https://hub.docker.com/r/containous/whoami/)
-[![Build Status](https://travis-ci.com/containous/whoami.svg?branch=master)](https://travis-ci.com/containous/whoami)
+[![Docker Pulls](https://img.shields.io/docker/pulls/traefik/whoami.svg)](https://hub.docker.com/r/traefik/whoami/)
+[![Build Status](https://travis-ci.com/traefik/whoami.svg?branch=master)](https://travis-ci.com/traefik/whoami)
 
 Tiny Go webserver that prints os information and HTTP request to output
 
@@ -9,10 +9,10 @@ Tiny Go webserver that prints os information and HTTP request to output
 
 ### Paths
 
-- `/data?size=n`: creates a response with a size `n`.
+- `/data?size=n[&unit=u]`: creates a response with a size `n`. The unit of measure, if specified, accepts the following values: `KB`, `MB`, `GB`, `TB` (optional, default: bytes).
 - `/echo`: webSocket echo.
 - `/bench`: always return the same response (`1`).
-- `/`: returns the whoami information (request and network information).
+- `/[?wait=d]`: returns the whoami information (request and network information). The optional `wait` query parameter can be provided to tell the server to wait before sending the response. The duration is expected in Go's [`time.Duration`](https://golang.org/pkg/time/#ParseDuration) format (e.g. `/?wait=100ms` to wait 100 milliseconds).
 - `/api`: returns the whoami information as JSON.
 - `/health`: heath check
     - `GET`, `HEAD`, ...: returns a response with the status code defined by the `POST`
@@ -22,13 +22,14 @@ Tiny Go webserver that prints os information and HTTP request to output
 
 - `cert`: give me a certificate.
 - `key`: give me a key.
-- `port`: give me a port number (default: 80).
+- `port`: give me a port number. (default: 80)
+- `name`: give me a name. (it can be also defined with `WHOAMI_NAME` environment variable)
 - `metrics`: enable collecting metrics (default: disabled). When enabled, request metrics are available using the `/debug/vars` request path.  
 
 ## Examples
 
 ```console
-$ docker run -d -P --name iamfoo containous/whoami
+$ docker run -d -P --name iamfoo traefik/whoami
 
 $ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
 map[80/tcp:[{0.0.0.0 32769}]]
@@ -63,4 +64,8 @@ $ curl -v http://localhost:80/health
 < HTTP/1.1 500 Internal Server Error
 < Date: Mon, 16 Sep 2019 22:52:40 GMT
 < Content-Length: 0
+```
+
+```console
+docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/cert.cer --key /certs/key.key
 ```

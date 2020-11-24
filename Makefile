@@ -11,10 +11,10 @@ build:
 	CGO_ENABLED=0 go build -a --installsuffix cgo --ldflags="-s" -o whoami
 
 image:
-	docker build -t containous/whoami .
+	docker build -t traefik/whoami .
 
 check:
 	golangci-lint run
 
 publish-images:
-	seihon publish -v "$(TAG_NAME)" -v "latest" --image-name containous/whoami --dry-run=false
+	seihon publish -v "$(TAG_NAME)" -v "latest" --image-name traefik/whoami --dry-run=false
