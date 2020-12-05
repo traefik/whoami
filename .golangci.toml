@@ -32,8 +32,14 @@
     "gochecknoinits",
     "gomnd",
     "wsl",
-    "goerr113",
+    "nlreturn",
     "testpackage",
+    "paralleltest",
+    "tparallel",
+    "goerr113",
+    "wrapcheck",
+    "exhaustive",
+    "exhaustivestruct",
   ]
 
 [issues]

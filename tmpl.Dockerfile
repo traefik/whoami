@@ -12,6 +12,7 @@ COPY go.sum .
 RUN GO111MODULE=on GOPROXY=https://proxy.golang.org go mod download
 
 COPY . .
+
 RUN GOARCH={{ .GoARCH }} GOARM={{ .GoARM }} make build
 
 FROM scratch

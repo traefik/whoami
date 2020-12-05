@@ -28,10 +28,12 @@ const (
 	TB
 )
 
-var cert string
-var key string
-var port string
-var name string
+var (
+	cert string
+	key  string
+	port string
+	name string
+)
 
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
@@ -130,7 +132,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	content := fillContent(size)
 
 	if attachment {
-		w.Header().Add("Content-Disposition", "Attachment")
+		w.Header().Set("Content-Disposition", "Attachment")
 		http.ServeContent(w, r, "data.txt", time.Now(), content)
 		return
 	}
@@ -231,8 +233,10 @@ type healthState struct {
 	StatusCode int
 }
 
-var currentHealthState = healthState{http.StatusOK}
-var mutexHealthState = &sync.RWMutex{}
+var (
+	currentHealthState = healthState{http.StatusOK}
+	mutexHealthState   = &sync.RWMutex{}
+)
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
