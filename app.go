@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"expvar"
 	"flag"
 	"fmt"
 	"io"
@@ -29,10 +30,15 @@ const (
 )
 
 var (
-	cert string
-	key  string
-	port string
-	name string
+	cert           string
+	key            string
+	port           string
+	name           string
+	metricsEnabled bool
+
+	totalRequestCount         expvarInt
+	concurrentRequestCount    expvarInt
+	maxConcurrentRequestCount expvarMaxInt
 )
 
 func init() {
@@ -40,6 +46,7 @@ func init() {
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
+	flag.BoolVar(&metricsEnabled, "metrics", false, "enable collecting metrics")
 }
 
 var upgrader = websocket.Upgrader{
@@ -49,13 +56,14 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	flag.Parse()
+	publishExpvarMetrics()
 
-	http.HandleFunc("/data", dataHandler)
-	http.HandleFunc("/echo", echoHandler)
-	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoamiHandler)
-	http.HandleFunc("/api", apiHandler)
-	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/data", wrapHandlerIfNeeded(dataHandler))
+	http.HandleFunc("/echo", wrapHandlerIfNeeded(echoHandler))
+	http.HandleFunc("/bench", wrapHandlerIfNeeded(benchHandler))
+	http.HandleFunc("/", wrapHandlerIfNeeded(whoamiHandler))
+	http.HandleFunc("/api", wrapHandlerIfNeeded(apiHandler))
+	http.HandleFunc("/health", wrapHandlerIfNeeded(healthHandler))
 
 	fmt.Println("Starting up on port " + port)
 
@@ -273,4 +281,35 @@ func fillContent(length int64) io.ReadSeeker {
 	}
 
 	return bytes.NewReader(b)
+}
+
+func publishExpvarMetrics() {
+	if metricsEnabled {
+		metrics := expvar.Map{}
+		metrics.Set("totalRequestCount", &totalRequestCount)
+		metrics.Set("concurrentRequestCount", &concurrentRequestCount)
+		metrics.Set("maxConcurrentRequestCount", &maxConcurrentRequestCount)
+		expvar.Publish("metrics", &metrics)
+	}
+}
+
+func wrapHandlerIfNeeded(handler http.HandlerFunc) http.HandlerFunc {
+	if !metricsEnabled {
+		return handler
+	}
+	return func(writer http.ResponseWriter, request *http.Request) {
+		onHandleRequestStart()
+		handler(writer, request)
+		onHandleRequestFinish()
+	}
+}
+
+func onHandleRequestStart() {
+	count := concurrentRequestCount.Add(1)
+	totalRequestCount.Add(1)
+	maxConcurrentRequestCount.Update(count)
+}
+
+func onHandleRequestFinish() {
+	concurrentRequestCount.Add(-1)
 }
