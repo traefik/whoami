@@ -30,15 +30,15 @@ const (
 )
 
 var (
-	cert string
-	key  string
-	port string
-	name string
-  metricsEnabled bool
+	cert           string
+	key            string
+	port           string
+	name           string
+	metricsEnabled bool
 
-  totalRequestCount expvarInt
-  concurrentRequestCount expvarInt
-  maxConcurrentRequestCount expvarMaxInt
+	totalRequestCount         expvarInt
+	concurrentRequestCount    expvarInt
+	maxConcurrentRequestCount expvarMaxInt
 )
 
 func init() {
