@@ -25,11 +25,21 @@
   disable = [
     "maligned",
     "lll",
-    "gas",
+    "gosec",
     "dupl",
     "prealloc",
     "gochecknoglobals",
     "gochecknoinits",
+    "gomnd",
+    "wsl",
+    "nlreturn",
+    "testpackage",
+    "paralleltest",
+    "tparallel",
+    "goerr113",
+    "wrapcheck",
+    "exhaustive",
+    "exhaustivestruct",
   ]
 
 [issues]

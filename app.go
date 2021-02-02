@@ -19,7 +19,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Units
 const (
 	_        = iota
 	KB int64 = 1 << (10 * iota)
@@ -28,15 +27,19 @@ const (
 	TB
 )
 
-var cert string
-var key string
-var port string
-var prefix string
+var (
+	cert   string
+	key    string
+	port   string
+	name   string
+	prefix string
+)
 
 func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 	flag.StringVar(&prefix, "prefix", "", "give me a prefix")
 }
 
@@ -133,7 +136,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	content := fillContent(size)
 
 	if attachment {
-		w.Header().Add("Content-Disposition", "Attachment")
+		w.Header().Set("Content-Disposition", "Attachment")
 		http.ServeContent(w, r, "data.txt", time.Now(), content)
 		return
 	}
@@ -152,6 +155,10 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		if err == nil {
 			time.Sleep(duration)
 		}
+	}
+
+	if name != "" {
+		_, _ = fmt.Fprintln(w, "Name:", name)
 	}
 
 	hostname, _ := os.Hostname()
@@ -190,6 +197,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL      string      `json:"url,omitempty"`
 		Host     string      `json:"host,omitempty"`
 		Method   string      `json:"method,omitempty"`
+		Name     string      `json:"name,omitempty"`
 	}{
 		Hostname: hostname,
 		IP:       []string{},
@@ -197,6 +205,7 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 		URL:      req.URL.RequestURI(),
 		Host:     req.Host,
 		Method:   req.Method,
+		Name:     name,
 	}
 
 	ifaces, _ := net.Interfaces()
@@ -228,8 +237,10 @@ type healthState struct {
 	StatusCode int
 }
 
-var currentHealthState = healthState{http.StatusOK}
-var mutexHealthState = &sync.RWMutex{}
+var (
+	currentHealthState = healthState{http.StatusOK}
+	mutexHealthState   = &sync.RWMutex{}
+)
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
