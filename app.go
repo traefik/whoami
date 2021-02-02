@@ -20,10 +20,14 @@ import (
 )
 
 const (
-	_        = iota
+	_ = iota
+	// KB - Kilobytes.
 	KB int64 = 1 << (10 * iota)
+	// MB - Megabytes.
 	MB
+	// GB - Gigabytes.
 	GB
+	// TB - Terabytes.
 	TB
 )
 
@@ -51,17 +55,17 @@ var upgrader = websocket.Upgrader{
 func main() {
 	flag.Parse()
 
-	http.HandleFunc(prefix + "/data", dataHandler)
-	http.HandleFunc(prefix + "/echo", echoHandler)
-	http.HandleFunc(prefix + "/bench", benchHandler)
-	http.HandleFunc(prefix + "/", whoamiHandler)
-	http.HandleFunc(prefix + "/api", apiHandler)
-	http.HandleFunc(prefix + "/health", healthHandler)
+	http.HandleFunc(prefix+"/data", dataHandler)
+	http.HandleFunc(prefix+"/echo", echoHandler)
+	http.HandleFunc(prefix+"/bench", benchHandler)
+	http.HandleFunc(prefix+"/", whoamiHandler)
+	http.HandleFunc(prefix+"/api", apiHandler)
+	http.HandleFunc(prefix+"/health", healthHandler)
 
-	fmt.Println("Starting up on port " + port)
-	if len(prefix) > 0 {
-		fmt.Println("Using prefix " + prefix)
-	}
+	// fmt.Println("Starting up on port " + port)
+	// if len(prefix) > 0 {
+	// 	fmt.Println("Using prefix " + prefix)
+	// }
 
 	if len(cert) > 0 && len(key) > 0 {
 		log.Fatal(http.ListenAndServeTLS(":"+port, cert, key, nil))
@@ -97,11 +101,11 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func printBinary(s []byte) {
-	fmt.Printf("Received b:")
-	for n := 0; n < len(s); n++ {
-		fmt.Printf("%d,", s[n])
-	}
-	fmt.Printf("\n")
+	// fmt.Printf("Received b:")
+	// for n := 0; n < len(s); n++ {
+	// 	fmt.Printf("%d,", s[n])
+	// }
+	// fmt.Printf("\n")
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
@@ -251,7 +255,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		fmt.Printf("Update health check status code [%d]\n", statusCode)
+		// fmt.Printf("Update health check status code [%d]\n", statusCode)
 
 		mutexHealthState.Lock()
 		defer mutexHealthState.Unlock()
