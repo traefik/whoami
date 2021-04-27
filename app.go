@@ -53,6 +53,7 @@ func main() {
 	http.HandleFunc("/data", dataHandler)
 	http.HandleFunc("/echo", echoHandler)
 	http.HandleFunc("/bench", benchHandler)
+	http.HandleFunc("/bench/", benchHandler)
 	http.HandleFunc("/", whoamiHandler)
 	http.HandleFunc("/api", apiHandler)
 	http.HandleFunc("/health", healthHandler)
