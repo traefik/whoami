@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/rs/zerolog"
 	"io"
 	"io/ioutil"
-	"log"
+	//"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"net"
 	"net/http"
 	"net/url"
@@ -53,6 +55,9 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
+
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdin})
+
 	flag.Parse()
 
 	http.HandleFunc("/data", dataHandler)
@@ -62,7 +67,7 @@ func main() {
 	http.HandleFunc("/api", apiHandler)
 	http.HandleFunc("/health", healthHandler)
 
-	fmt.Println("Starting up on port " + port)
+	log.Info().Msg("Starting up on port " + port)
 
 	if len(cert) > 0 && len(key) > 0 {
 		server := &http.Server{
@@ -73,15 +78,16 @@ func main() {
 			server.TLSConfig = setupMutualTLS(ca)
 		}
 
-		log.Fatal(server.ListenAndServeTLS(cert, key))
+		log.Fatal().Err(server.ListenAndServeTLS(cert, key))
 	}
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+
+	log.Fatal().Err(http.ListenAndServe(":"+port, nil))
 }
 
 func setupMutualTLS(ca string) *tls.Config {
 	clientCACert, err := ioutil.ReadFile(ca)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 
 	clientCertPool := x509.NewCertPool()
@@ -106,7 +112,7 @@ func benchHandler(w http.ResponseWriter, _ *http.Request) {
 func echoHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		log.Err(err)
 		return
 	}
 
@@ -125,11 +131,11 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func printBinary(s []byte) {
-	fmt.Printf("Received b:")
+	log.Info().Msgf("Received b:")
 	for n := 0; n < len(s); n++ {
-		fmt.Printf("%d,", s[n])
+		log.Info().Msgf("%d,", s[n])
 	}
-	fmt.Printf("\n")
+	log.Info().Msgf("\n")
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
@@ -185,12 +191,13 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	var buf bytes.Buffer
 	if name != "" {
-		_, _ = fmt.Fprintln(w, "Name:", name)
+		_, _ = fmt.Fprintln(&buf, "Name:", name)
 	}
 
 	hostname, _ := os.Hostname()
-	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
+	_, _ = fmt.Fprintln(&buf, "Hostname:", hostname)
 
 	ifaces, _ := net.Interfaces()
 	for _, i := range ifaces {
@@ -204,15 +211,21 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			_, _ = fmt.Fprintln(w, "IP:", ip)
+			_, _ = fmt.Fprintln(&buf, "IP:", ip)
 		}
 	}
 
-	_, _ = fmt.Fprintln(w, "RemoteAddr:", req.RemoteAddr)
-	if err := req.Write(w); err != nil {
+	_, _ = fmt.Fprintln(&buf, "RemoteAddr:", req.RemoteAddr)
+	if err := req.Write(&buf); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Msg(buf.String())
 }
 
 func apiHandler(w http.ResponseWriter, req *http.Request) {
@@ -255,10 +268,17 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		log.Err(err)
+		return
+	}
+
+	log.Info().Msg(buf.String())
 }
 
 type healthState struct {
