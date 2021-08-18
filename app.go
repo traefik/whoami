@@ -56,7 +56,7 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdin})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
 	flag.Parse()
 
