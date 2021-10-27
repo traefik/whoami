@@ -43,7 +43,7 @@ func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
-	flag.StringVar(&port, "port", "80", "give me a port number")
+	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT", "80"), "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 }
 
@@ -305,4 +305,12 @@ func fillContent(length int64) io.ReadSeeker {
 	}
 
 	return bytes.NewReader(b)
+}
+
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
 }
