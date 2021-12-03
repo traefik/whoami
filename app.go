@@ -55,27 +55,32 @@ var upgrader = websocket.Upgrader{
 func main() {
 	flag.Parse()
 
-	http.HandleFunc("/data", dataHandler)
-	http.HandleFunc("/echo", echoHandler)
-	http.HandleFunc("/bench", benchHandler)
-	http.HandleFunc("/", whoamiHandler)
-	http.HandleFunc("/api", apiHandler)
-	http.HandleFunc("/health", healthHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/data", dataHandler)
+	mux.HandleFunc("/echo", echoHandler)
+	mux.HandleFunc("/bench", benchHandler)
+	mux.HandleFunc("/", whoamiHandler)
+	mux.HandleFunc("/api", apiHandler)
+	mux.HandleFunc("/health", healthHandler)
 
-	fmt.Println("Starting up on port " + port)
+	if cert == "" || key == "" {
+		log.Printf("Starting up on port %s", port)
 
-	if len(cert) > 0 && len(key) > 0 {
-		server := &http.Server{
-			Addr: ":" + port,
-		}
-
-		if len(ca) > 0 {
-			server.TLSConfig = setupMutualTLS(ca)
-		}
-
-		log.Fatal(server.ListenAndServeTLS(cert, key))
+		log.Fatal(http.ListenAndServe(":"+port, mux))
 	}
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+	}
+
+	if len(ca) > 0 {
+		server.TLSConfig = setupMutualTLS(ca)
+	}
+
+	log.Printf("Starting up with TLS on port %s", port)
+
+	log.Fatal(server.ListenAndServeTLS(cert, key))
 }
 
 func setupMutualTLS(ca string) *tls.Config {
