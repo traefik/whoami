@@ -1,0 +1,46 @@
+run:
+  deadline: 2m
+  skip-files: []
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 12
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  misspell:
+    locale: US
+
+linters:
+  enable-all: true
+  disable:
+    - golint # deprecated
+    - scopelint # deprecated
+    - interfacer # deprecated
+    - maligned # deprecated
+    - lll
+    - gosec
+    - dupl
+    - prealloc
+    - gochecknoglobals
+    - gochecknoinits
+    - gomnd
+    - wsl
+    - nlreturn
+    - testpackage
+    - paralleltest
+    - tparallel
+    - goerr113
+    - wrapcheck
+    - exhaustive
+    - exhaustivestruct
+    - forbidigo
+    - varnamelen
+    - nilnil
+
+issues:
+  exclude-use-default: false
+  max-per-linter: 0
+  max-same-issues: 0
+  exclude: []
