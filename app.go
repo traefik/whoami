@@ -32,14 +32,16 @@ const (
 )
 
 var (
-	cert string
-	key  string
-	ca   string
-	port string
-	name string
+	cert    string
+	key     string
+	ca      string
+	port    string
+	name    string
+	verbose bool
 )
 
 func init() {
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
@@ -56,12 +58,21 @@ func main() {
 	flag.Parse()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/data", dataHandler)
-	mux.HandleFunc("/echo", echoHandler)
-	mux.HandleFunc("/bench", benchHandler)
-	mux.HandleFunc("/", whoamiHandler)
-	mux.HandleFunc("/api", apiHandler)
-	mux.HandleFunc("/health", healthHandler)
+	if verbose {
+		mux.HandleFunc("/data", loggingHandler(dataHandler))
+		mux.HandleFunc("/echo", loggingHandler(echoHandler))
+		mux.HandleFunc("/bench", loggingHandler(benchHandler))
+		mux.HandleFunc("/", loggingHandler(whoamiHandler))
+		mux.HandleFunc("/api", loggingHandler(apiHandler))
+		mux.HandleFunc("/health", loggingHandler(healthHandler))
+	} else {
+		mux.HandleFunc("/data", dataHandler)
+		mux.HandleFunc("/echo", echoHandler)
+		mux.HandleFunc("/bench", benchHandler)
+		mux.HandleFunc("/", whoamiHandler)
+		mux.HandleFunc("/api", apiHandler)
+		mux.HandleFunc("/health", healthHandler)
+	}
 
 	if cert == "" || key == "" {
 		log.Printf("Starting up on port %s", port)
@@ -100,6 +111,14 @@ func setupMutualTLS(ca string) *tls.Config {
 	}
 
 	return tlsConfig
+}
+
+func loggingHandler(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r)
+		date := time.Now().Format(time.RFC1123)
+		log.Printf("%s - - [%s] \"%s %s %s\" %s -", r.RemoteAddr, date, r.Method, r.URL.Path, r.Proto, "-")
+	}
 }
 
 func benchHandler(w http.ResponseWriter, _ *http.Request) {
