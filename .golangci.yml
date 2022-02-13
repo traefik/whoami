@@ -38,6 +38,7 @@ linters:
     - forbidigo
     - varnamelen
     - nilnil
+    - ifshort
 
 issues:
   exclude-use-default: false
