@@ -1,0 +1,44 @@
+name: "Release a tag"
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    name: Release Process
+    runs-on: ubuntu-latest
+    env:
+      GO_VERSION: 1.17
+      SEIHON_VERSION: v0.9.0
+      CGO_ENABLED: 0
+
+    steps:
+
+      # https://github.com/marketplace/actions/setup-go-environment
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      # https://github.com/marketplace/actions/checkout
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Install Docker image multi-arch builder
+      - name: Install seihon ${{ env.SEIHON_VERSION }}
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/ldez/seihon/master/godownloader.sh | sh -s -- -b $(go env GOPATH)/bin ${SEIHON_VERSION}
+          seihon --version
+
+      - name: Docker Login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Deploy Docker Images (seihon)
+        run: make publish-images
