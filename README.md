@@ -9,21 +9,46 @@ Tiny Go webserver that prints OS information and HTTP request to output
 
 ### Paths
 
-- `/data?size=n[&unit=u]`: creates a response with a size `n`. The unit of measure, if specified, accepts the following values: `KB`, `MB`, `GB`, `TB` (optional, default: bytes).
-- `/echo`: webSocket echo.
-- `/bench`: always return the same response (`1`).
-- `/[?wait=d]`: returns the whoami information (request and network information). The optional `wait` query parameter can be provided to tell the server to wait before sending the response. The duration is expected in Go's [`time.Duration`](https://golang.org/pkg/time/#ParseDuration) format (e.g. `/?wait=100ms` to wait 100 milliseconds).
-- `/api`: returns the whoami information as JSON.
-- `/health`: heath check
-    - `GET`, `HEAD`, ...: returns a response with the status code defined by the `POST`
-    - `POST`: changes the status code of the `GET` (`HEAD`, ...) response.
+#### `/[?wait=d]`
+
+Returns the whoami information (request and network information).
+
+The optional `wait` query parameter can be provided to tell the server to wait before sending the response.
+The duration is expected in Go's [`time.Duration`](https://golang.org/pkg/time/#ParseDuration) format (e.g. `/?wait=100ms` to wait 100 milliseconds).
+
+#### `/api`
+
+Returns the whoami information as JSON.
+
+#### `/bench`
+
+Always return the same response (`1`).
+
+#### `/data?size=n[&unit=u]`
+
+Creates a response with a size `n`.
+
+The unit of measure, if specified, accepts the following values: `KB`, `MB`, `GB`, `TB` (optional, default: bytes).
+
+#### `/echo`
+
+WebSocket echo.
+
+#### `/health`
+
+Heath check.
+
+- `GET`, `HEAD`, ...: returns a response with the status code defined by the `POST`
+- `POST`: changes the status code of the `GET` (`HEAD`, ...) response.
 
 ### Flags
 
-- `cert`: give me a certificate.
-- `key`: give me a key.
-- `port`: give me a port number. (it can be also defined with `WHOAMI_PORT_NUMBER` environment variable) (default: 80)
-- `name`: give me a name. (it can be also defined with `WHOAMI_NAME` environment variable)
+| Flag    | Env var              | Description                            |
+|---------|----------------------|----------------------------------------|
+| `cert`  |                      | give me a certificate.                 |
+| `key`   |                      | give me a key.                         |
+| `port`  | `WHOAMI_PORT_NUMBER` | give me a port number. (default: `80`) |
+| `name`  | `WHOAMI_NAME`        | give me a name.                        |
 
 ## Examples
 
