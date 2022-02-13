@@ -68,3 +68,15 @@ $ curl -v http://localhost:80/health
 ```console
 docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/cert.cer --key /certs/key.key
 ```
+
+```yml
+version: '3.9'
+
+services:
+  whoami:
+    image: traefik/whoami
+    container_name: iamfoo
+    command:
+       # It tells whoami to start listening on 2001 instead of 80
+       - --port 2001
+```
