@@ -68,3 +68,11 @@ $ curl -v http://localhost:80/health
 ```console
 docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/cert.cer --key /certs/key.key
 ```
+
+```compose
+services:
+  whoami:
+    container_name: iamfoo
+    image: traefik/whoami
+    command: '--port 8080'
+```
