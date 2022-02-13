@@ -43,12 +43,13 @@ Heath check.
 
 ### Flags
 
-| Flag    | Env var              | Description                            |
-|---------|----------------------|----------------------------------------|
-| `cert`  |                      | give me a certificate.                 |
-| `key`   |                      | give me a key.                         |
-| `port`  | `WHOAMI_PORT_NUMBER` | give me a port number. (default: `80`) |
-| `name`  | `WHOAMI_NAME`        | give me a name.                        |
+| Flag     | Env var              | Description                             |
+|----------|----------------------|-----------------------------------------|
+| `cert`   |                      | give me a certificate.                  |
+| `key`    |                      | give me a key.                          |
+| `cacert` |                      | give me a CA chain, enforces mutual TLS |
+| `port`   | `WHOAMI_PORT_NUMBER` | give me a port number. (default: `80`)  |
+| `name`   | `WHOAMI_NAME`        | give me a name.                         |
 
 ## Examples
 
