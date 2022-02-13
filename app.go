@@ -58,21 +58,12 @@ func main() {
 	flag.Parse()
 
 	mux := http.NewServeMux()
-	if verbose {
-		mux.HandleFunc("/data", loggingHandler(dataHandler))
-		mux.HandleFunc("/echo", loggingHandler(echoHandler))
-		mux.HandleFunc("/bench", loggingHandler(benchHandler))
-		mux.HandleFunc("/", loggingHandler(whoamiHandler))
-		mux.HandleFunc("/api", loggingHandler(apiHandler))
-		mux.HandleFunc("/health", loggingHandler(healthHandler))
-	} else {
-		mux.HandleFunc("/data", dataHandler)
-		mux.HandleFunc("/echo", echoHandler)
-		mux.HandleFunc("/bench", benchHandler)
-		mux.HandleFunc("/", whoamiHandler)
-		mux.HandleFunc("/api", apiHandler)
-		mux.HandleFunc("/health", healthHandler)
-	}
+	mux.Handle("/data", handle(dataHandler, verbose))
+	mux.Handle("/echo", handle(echoHandler, verbose))
+	mux.Handle("/bench", handle(benchHandler, verbose))
+	mux.Handle("/api", handle(apiHandler, verbose))
+	mux.Handle("/health", handle(healthHandler, verbose))
+	mux.Handle("/", handle(whoamiHandler, verbose))
 
 	if cert == "" || key == "" {
 		log.Printf("Starting up on port %s", port)
@@ -113,12 +104,17 @@ func setupMutualTLS(ca string) *tls.Config {
 	return tlsConfig
 }
 
-func loggingHandler(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r)
-		date := time.Now().Format(time.RFC1123)
-		log.Printf("%s - - [%s] \"%s %s %s\" %s -", r.RemoteAddr, date, r.Method, r.URL.Path, r.Proto, "-")
+func handle(next http.HandlerFunc, verbose bool) http.Handler {
+	if !verbose {
+		return next
 	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next(w, r)
+
+		// <remote_IP_address> - [<timestamp>] "<request_method> <request_path> <request_protocol>" -
+		log.Printf("%s - - [%s] \"%s %s %s\" - -", r.RemoteAddr, time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL.Path, r.Proto)
+	})
 }
 
 func benchHandler(w http.ResponseWriter, _ *http.Request) {
