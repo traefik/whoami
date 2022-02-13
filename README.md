@@ -3,7 +3,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/traefik/whoami.svg)](https://hub.docker.com/r/traefik/whoami/)
 [![Build Status](https://github.com/traefik/whoami/workflows/Main/badge.svg?branch=master)](https://github.com/traefik/whoami/actions)
 
-Tiny Go webserver that prints os information and HTTP request to output
+Tiny Go webserver that prints OS information and HTTP request to output
 
 ## Usage
 
@@ -66,7 +66,7 @@ $ curl -v http://localhost:80/health
 ```
 
 ```console
-docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/cert.cer --key /certs/key.key
+docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/example.cert --key /certs/example.key
 ```
 
 ```yml
@@ -75,8 +75,8 @@ version: '3.9'
 services:
   whoami:
     image: traefik/whoami
-    container_name: iamfoo
     command:
        # It tells whoami to start listening on 2001 instead of 80
        - --port 2001
+       - --name iamfoo
 ```
