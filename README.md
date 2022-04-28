@@ -55,6 +55,7 @@ Heath check.
 | `port`    | `WHOAMI_PORT_NUMBER` | Give me a port number. (default: `80`)  |
 | `name`    | `WHOAMI_NAME`        | Give me a name.                         |
 | `verbose` |                      | Enable verbose logging.                 |
+| `no-data` |                      | Disable data handler.                   |
 
 ## Examples
 
