@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -181,7 +180,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 		attachment = false
 	}
 
-	content := fillContent(size)
+	content := &contentReader{size: size}
 
 	if attachment {
 		w.Header().Set("Content-Disposition", "Attachment")
@@ -309,22 +308,6 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
 	}
-}
-
-func fillContent(length int64) io.ReadSeeker {
-	charset := "-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, length)
-
-	for i := range b {
-		b[i] = charset[i%len(charset)]
-	}
-
-	if length > 0 {
-		b[0] = '|'
-		b[length-1] = '|'
-	}
-
-	return bytes.NewReader(b)
 }
 
 func getEnv(key, fallback string) string {

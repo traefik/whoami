@@ -39,6 +39,7 @@ linters:
     - varnamelen
     - nilnil
     - ifshort
+    - exhaustruct
 
 issues:
   exclude-use-default: false
