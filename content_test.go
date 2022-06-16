@@ -17,11 +17,13 @@ func Test_contentReader_Read(t *testing.T) {
 			content: "|ABCDEFGHIJKLMNOPQRSTUVWXYZ-ABCDEFGHIJK|",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := &contentReader{
-				size: tt.size,
-			}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			d := &contentReader{size: test.size}
 
 			b, err := io.ReadAll(d)
 			if err != nil {
@@ -29,8 +31,8 @@ func Test_contentReader_Read(t *testing.T) {
 				return
 			}
 
-			if string(b) != tt.content {
-				t.Errorf("return content does not match expected value: %s vs %s", tt.content, b)
+			if string(b) != test.content {
+				t.Errorf("return content does not match expected value: got %s want %s", b, test.content)
 			}
 		})
 	}
@@ -52,12 +54,15 @@ func Test_contentReader_ReadSeek(t *testing.T) {
 			content:    "JKLMNOPQRSTUVWXYZ-ABCDEFGHIJK|",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			d := &contentReader{
-				size: tt.size,
-			}
-			_, err := d.Seek(tt.offset, tt.seekWhence)
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			d := &contentReader{size: test.size}
+
+			_, err := d.Seek(test.offset, test.seekWhence)
 			if err != nil {
 				t.Errorf("contentReader.Seek() error = %v", err)
 				return
@@ -69,8 +74,8 @@ func Test_contentReader_ReadSeek(t *testing.T) {
 				return
 			}
 
-			if string(b) != tt.content {
-				t.Errorf("return content does not match expected value: %s vs %s", tt.content, b)
+			if string(b) != test.content {
+				t.Errorf("return content does not match expected value: got %s want %s", b, test.content)
 			}
 		})
 	}
