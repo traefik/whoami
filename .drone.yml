@@ -6,4 +6,4 @@ data:
   compress: true
   releaseName: whoami
   branches: main
-  events: push
+  events: ["custom", "push"]
