@@ -1,5 +1,0 @@
-kind: template
-load: test.jsonnet
-data:
-  repositoryName: josaorg/whoami
-  releaseName: whoamiDev
