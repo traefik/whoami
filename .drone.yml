@@ -1,0 +1,9 @@
+kind: template
+load: test.jsonnet
+data:
+  buildImage: josaorg/whoami
+  autoTag: true
+  compress: true
+  releaseName: whoami
+  branches: main
+  events: push
