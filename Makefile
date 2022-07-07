@@ -20,3 +20,6 @@ image:
 
 publish-images:
 	seihon publish -v "$(TAG_NAME)" -v "latest" --image-name $(IMAGE_NAME) --dry-run=false
+
+protoc:
+	 protoc --proto_path . ./grpc.proto --go-grpc_out=./ --go_out=./
