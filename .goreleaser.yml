@@ -45,7 +45,6 @@ archives:
 
 dockers:
   - use: buildx
-    skip_push: true
     goos: linux
     goarch: amd64
     dockerfile: buildx.Dockerfile
@@ -62,7 +61,6 @@ dockers:
       - '--label=org.opencontainers.image.version={{.Version}}'
 
   - use: buildx
-    skip_push: true
     goos: linux
     goarch: arm64
     dockerfile: buildx.Dockerfile
