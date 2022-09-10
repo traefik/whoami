@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -85,7 +84,7 @@ func main() {
 }
 
 func setupMutualTLS(ca string) *tls.Config {
-	clientCACert, err := ioutil.ReadFile(ca)
+	clientCACert, err := os.ReadFile(ca)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -312,7 +311,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 
 func getEnv(key, fallback string) string {
 	value := os.Getenv(key)
-	if len(value) == 0 {
+	if value == "" {
 		return fallback
 	}
 	return value

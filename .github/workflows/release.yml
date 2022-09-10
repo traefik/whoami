@@ -9,7 +9,7 @@ jobs:
     name: Release Process
     runs-on: ubuntu-latest
     env:
-      GO_VERSION: 1.17
+      GO_VERSION: 1.19
       SEIHON_VERSION: v0.9.0
       CGO_ENABLED: 0
 

@@ -1,4 +1,4 @@
-.PHONY: default build image check publish-images
+.PHONY: default check test build image publish-images
 
 TAG_NAME := $(shell git tag -l --contains HEAD)
 
