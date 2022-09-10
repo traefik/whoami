@@ -27,12 +27,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Install Docker image multi-arch builder
-      - name: Install seihon ${{ env.SEIHON_VERSION }}
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/ldez/seihon/master/godownloader.sh | sh -s -- -b $(go env GOPATH)/bin ${SEIHON_VERSION}
-          seihon --version
-
       - name: Docker Login
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -40,5 +34,14 @@ jobs:
         run: |
           echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
 
-      - name: Deploy Docker Images (seihon)
-        run: make publish-images
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # https://goreleaser.com/ci/actions/
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_REPO }}
