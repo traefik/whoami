@@ -59,10 +59,13 @@ dockers:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
     build_flag_templates:
       - '--pull'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
       - '--label=org.opencontainers.image.created={{.Date}}'
       - '--label=org.opencontainers.image.title={{.ProjectName}}'
       - '--label=org.opencontainers.image.revision={{.FullCommit}}'
       - '--label=org.opencontainers.image.version={{.Version}}'
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--platform=linux/amd64'
 
   - use: buildx
     goos: linux
@@ -74,8 +77,10 @@ dockers:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
     build_flag_templates:
       - '--pull'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
       - '--label=org.opencontainers.image.created={{.Date}}'
       - '--label=org.opencontainers.image.title={{.ProjectName}}'
       - '--label=org.opencontainers.image.revision={{.FullCommit}}'
       - '--label=org.opencontainers.image.version={{.Version}}'
-
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--platform=linux/arm64'
