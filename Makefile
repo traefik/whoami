@@ -1,6 +1,4 @@
-.PHONY: default check test build image publish-images
-
-TAG_NAME := $(shell git tag -l --contains HEAD)
+.PHONY: default check test build image
 
 IMAGE_NAME := traefik/whoami
 
@@ -17,6 +15,3 @@ check:
 
 image:
 	docker build -t $(IMAGE_NAME) .
-
-publish-images:
-	seihon publish -v "$(TAG_NAME)" -v "latest" --image-name $(IMAGE_NAME) --dry-run=false
