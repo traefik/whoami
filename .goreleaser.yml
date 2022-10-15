@@ -62,12 +62,15 @@ dockers:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
     build_flag_templates:
       - '--pull'
-      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
-      - '--label=org.opencontainers.image.created={{.Date}}'
+      # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
       - '--label=org.opencontainers.image.title={{.ProjectName}}'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--label=org.opencontainers.image.url={{.GitURL}}'
+      - '--label=org.opencontainers.image.documentation={{.GitURL}}'
+      - '--label=org.opencontainers.image.created={{.Date}}'
       - '--label=org.opencontainers.image.revision={{.FullCommit}}'
       - '--label=org.opencontainers.image.version={{.Version}}'
-      - '--label=org.opencontainers.image.source={{.GitURL}}'
       - '--platform=linux/amd64'
 
   - use: buildx
@@ -80,12 +83,15 @@ dockers:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
     build_flag_templates:
       - '--pull'
-      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
-      - '--label=org.opencontainers.image.created={{.Date}}'
+      # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
       - '--label=org.opencontainers.image.title={{.ProjectName}}'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--label=org.opencontainers.image.url={{.GitURL}}'
+      - '--label=org.opencontainers.image.documentation={{.GitURL}}'
+      - '--label=org.opencontainers.image.created={{.Date}}'
       - '--label=org.opencontainers.image.revision={{.FullCommit}}'
       - '--label=org.opencontainers.image.version={{.Version}}'
-      - '--label=org.opencontainers.image.source={{.GitURL}}'
       - '--platform=linux/arm64'
 
   - use: buildx
@@ -99,10 +105,13 @@ dockers:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
     build_flag_templates:
       - '--pull'
-      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
-      - '--label=org.opencontainers.image.created={{.Date}}'
+      # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
       - '--label=org.opencontainers.image.title={{.ProjectName}}'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--label=org.opencontainers.image.url={{.GitURL}}'
+      - '--label=org.opencontainers.image.documentation={{.GitURL}}'
+      - '--label=org.opencontainers.image.created={{.Date}}'
       - '--label=org.opencontainers.image.revision={{.FullCommit}}'
       - '--label=org.opencontainers.image.version={{.Version}}'
-      - '--label=org.opencontainers.image.source={{.GitURL}}'
       - '--platform=linux/arm/v7'
