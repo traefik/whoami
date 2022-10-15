@@ -39,14 +39,17 @@ docker_manifests:
     image_templates:
       - 'traefik/whoami:{{ .Tag }}-amd64'
       - 'traefik/whoami:{{ .Tag }}-arm64'
+      - 'traefik/whoami:{{ .Tag }}-armv7'
   - name_template: 'traefik/whoami:latest'
     image_templates:
       - 'traefik/whoami:{{ .Tag }}-amd64'
       - 'traefik/whoami:{{ .Tag }}-arm64'
+      - 'traefik/whoami:{{ .Tag }}-armv7'
   - name_template: 'traefik/whoami:v{{ .Major }}.{{ .Minor }}'
     image_templates:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
+      - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
 
 dockers:
   - use: buildx
@@ -84,3 +87,22 @@ dockers:
       - '--label=org.opencontainers.image.version={{.Version}}'
       - '--label=org.opencontainers.image.source={{.GitURL}}'
       - '--platform=linux/arm64'
+
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: '7'
+    dockerfile: buildx.Dockerfile
+    image_templates:
+      - 'traefik/whoami:latest-armv7'
+      - 'traefik/whoami:{{ .Tag }}-armv7'
+      - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
+    build_flag_templates:
+      - '--pull'
+      - '--label=org.opencontainers.image.description=Tiny Go webserver that prints OS information and HTTP request to output'
+      - '--label=org.opencontainers.image.created={{.Date}}'
+      - '--label=org.opencontainers.image.title={{.ProjectName}}'
+      - '--label=org.opencontainers.image.revision={{.FullCommit}}'
+      - '--label=org.opencontainers.image.version={{.Version}}'
+      - '--label=org.opencontainers.image.source={{.GitURL}}'
+      - '--platform=linux/arm/v7'
