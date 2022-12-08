@@ -104,6 +104,6 @@ services:
     image: traefik/whoami
     command:
        # It tells whoami to start listening on 2001 instead of 80
-       - --port 2001
-       - --name iamfoo
+       - --port=2001
+       - --name=iamfoo
 ```
