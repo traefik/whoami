@@ -2,4 +2,7 @@ module github.com/traefik/whoami
 
 go 1.19
 
-require github.com/gorilla/websocket v1.4.2
+require (
+	github.com/gorilla/websocket v1.4.2
+	gopkg.in/yaml.v3 v3.0.1
+)

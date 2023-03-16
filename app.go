@@ -17,8 +17,14 @@ import (
 	"sync"
 	"time"
 
+	_ "embed"
+
 	"github.com/gorilla/websocket"
+	"gopkg.in/yaml.v3"
 )
+
+//go:embed openapi.yaml
+var httpspec []byte
 
 // Units.
 const (
@@ -63,6 +69,7 @@ func main() {
 	mux.Handle("/echo", handle(echoHandler, verbose))
 	mux.Handle("/bench", handle(benchHandler, verbose))
 	mux.Handle("/api", handle(apiHandler, verbose))
+	mux.Handle("/apispec", handle(apiSpecHandler, verbose))
 	mux.Handle("/health", handle(healthHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
@@ -277,6 +284,42 @@ func apiHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func apiSpecHandler(w http.ResponseWriter, req *http.Request) {
+	u, _ := url.Parse(req.URL.String())
+	format := u.Query().Get("format")
+	specData := httpspec
+
+	if format == "" {
+		format = "yaml"
+	}
+
+	var contentType string
+	switch format {
+	case "json":
+		contentType = "application/json"
+		var spec interface{}
+		if err := yaml.Unmarshal(httpspec, &spec); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		specData, _ = json.Marshal(spec)
+
+	case "yaml":
+		contentType = "application/yaml"
+
+	default:
+		http.Error(w, "Unsupported format", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	if _, err := w.Write(specData); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

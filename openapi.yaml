@@ -1,0 +1,167 @@
+openapi: 3.1.0
+
+info:
+  title: "Who Am I API"
+  version: "v1"
+  description: "Tiny API that prints OS and HTTP request info as output"
+
+components:
+  responses:
+    HealthCheckStatus:
+      description: Returns a response with the HTTP status code only
+      response:
+        '1XX':
+          description: Information
+        '2XX':
+          description: Successful
+        '3XX':
+          description: Redirection
+        '4XX':
+          description: Client Error
+        '5XX':
+          description: Server Error
+  
+  schemas:
+    WhoAmI:
+      type: object
+      properties:
+        Hostname:
+          type: string
+        IP:
+          type: array
+          items: string
+        Headers:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Header"
+        URL:
+          type: string
+        Host: 
+          type: string
+        Method:
+          type: string
+        Name:
+          type: string
+    
+    Header: 
+      type: object
+      properties:
+        values:
+          type: array
+          items: string
+
+paths:
+  /:
+    get:
+      summary: Returns OS and HTTP request information
+      parameters:
+        - in: query
+          name: wait
+          schema:
+            type: string
+      response:
+        '200':
+        description: OS and HTTP request information
+        content:
+          text/plain:
+            scheme:
+              $ref: "#/components/schemas/WhoAmI"
+
+  /api:
+    get:
+      summary: Returns Request Info in JSON format
+      response:
+        '200':
+          description: OS and HTTP request info in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WhoAmI"
+
+  /apispec:
+    get:
+      summary: Returns the whoami API specification
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+      response:
+        '200':
+          description: Whoami API specification
+          content:
+            text/plain:
+            scheme:
+              type: string
+              format: binary
+
+  /bench:
+    get:
+      summary: Useful for benchmark tests, always returns 1
+      response:
+        default:
+          description: Always returns 1
+          content:
+            text/plain:
+              scheme:
+                type: integer
+                example: 1
+
+  /data:
+    get:
+      summary: Returns a data response with the specified size parameter
+      parameters:
+        - in: query
+          name: size
+          schema:
+            type: integer
+        - in: query
+          name: unit
+          schema:
+            type: string
+            enum:
+              - kb
+              - mb
+              - gb
+              - tb
+        - in: query
+          name: attachment
+          schema:
+            type: boolean
+            allowEmptyValue: true
+      response:
+        '200':
+          description: OK
+        '500':
+          description: Error while copying content
+
+  /health:
+    head:
+      summary: Returns a response with HTTP status code as defined by calling the POST method
+      response:
+        $ref: '#/components/responses/HealthCheckStatus'
+
+    get:
+      summary: Returns a response with HTTP status code as defined by calling the POST method
+      response:
+        $ref: '#/components/responses/HealthCheckStatus'
+
+    post:
+      summary: Defines response status code for the GET method
+      requestBody:
+        description: HTTP Status Code
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: integer
+              minimum: 100
+              maximum: 599
+      response:
+        '200':
+          description: OK
+        '400':
+          description: Invalid request body content
