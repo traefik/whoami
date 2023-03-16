@@ -51,6 +51,22 @@ docker_manifests:
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
 
+  - name_template: 'ghcr.io/traefik/whoami:{{ .Tag }}'
+    image_templates:
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-amd64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-arm64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-armv7'
+  - name_template: 'ghcr.io/traefik/whoami:latest'
+    image_templates:
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-amd64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-arm64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-armv7'
+  - name_template: 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}'
+    image_templates:
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
+
 dockers:
   - use: buildx
     goos: linux
@@ -60,6 +76,9 @@ dockers:
       - 'traefik/whoami:latest-amd64'
       - 'traefik/whoami:{{ .Tag }}-amd64'
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
+      - 'ghcr.io/traefik/whoami:latest-amd64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-amd64'
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-amd64'
     build_flag_templates:
       - '--pull'
       # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
@@ -81,6 +100,9 @@ dockers:
       - 'traefik/whoami:latest-arm64'
       - 'traefik/whoami:{{ .Tag }}-arm64'
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
+      - 'ghcr.io/traefik/whoami:latest-arm64'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-arm64'
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-arm64'
     build_flag_templates:
       - '--pull'
       # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
@@ -103,6 +125,9 @@ dockers:
       - 'traefik/whoami:latest-armv7'
       - 'traefik/whoami:{{ .Tag }}-armv7'
       - 'traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
+      - 'ghcr.io/traefik/whoami:latest-armv7'
+      - 'ghcr.io/traefik/whoami:{{ .Tag }}-armv7'
+      - 'ghcr.io/traefik/whoami:v{{ .Major }}.{{ .Minor }}-armv7'
     build_flag_templates:
       - '--pull'
       # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
