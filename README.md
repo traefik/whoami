@@ -34,6 +34,10 @@ The unit of measure, if specified, accepts the following values: `KB`, `MB`, `GB
 
 WebSocket echo.
 
+### `/environment`
+
+Return a list of all environment variables.
+
 #### `/health`
 
 Heath check.

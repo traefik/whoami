@@ -64,6 +64,7 @@ func main() {
 	mux.Handle("/bench", handle(benchHandler, verbose))
 	mux.Handle("/api", handle(apiHandler, verbose))
 	mux.Handle("/health", handle(healthHandler, verbose))
+	mux.Handle("/environment", handle(environmentHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
 	if cert == "" || key == "" {
@@ -309,6 +310,17 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		mutexHealthState.RLock()
 		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
+	}
+}
+
+func environmentHandler(w http.ResponseWriter, req *http.Request) {
+	for _, env := range os.Environ() {
+		_, _ = fmt.Fprintln(w, env)
+	}
+
+	if err := req.Write(w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
