@@ -56,14 +56,15 @@ func init() {
 
 // Data whoami information.
 type Data struct {
-	Hostname   string      `json:"hostname,omitempty"`
-	IP         []string    `json:"ip,omitempty"`
-	Headers    http.Header `json:"headers,omitempty"`
-	URL        string      `json:"url,omitempty"`
-	Host       string      `json:"host,omitempty"`
-	Method     string      `json:"method,omitempty"`
-	Name       string      `json:"name,omitempty"`
-	RemoteAddr string      `json:"remoteAddr,omitempty"`
+	Hostname   string            `json:"hostname,omitempty"`
+	IP         []string          `json:"ip,omitempty"`
+	Headers    http.Header       `json:"headers,omitempty"`
+	URL        string            `json:"url,omitempty"`
+	Host       string            `json:"host,omitempty"`
+	Method     string            `json:"method,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	RemoteAddr string            `json:"remoteAddr,omitempty"`
+	Environ    map[string]string `json:"environ,omitempty"`
 }
 
 func main() {
@@ -207,7 +208,9 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func whoamiHandler(w http.ResponseWriter, r *http.Request) {
-	wait := r.URL.Query().Get("wait")
+	queryParams := r.URL.Query()
+
+	wait := queryParams.Get("wait")
 	if len(wait) > 0 {
 		duration, err := time.ParseDuration(wait)
 		if err == nil {
@@ -231,10 +234,27 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	if ok, _ := strconv.ParseBool(queryParams.Get("env")); ok {
+		for _, env := range os.Environ() {
+			_, _ = fmt.Fprintln(w, env)
+		}
+	}
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+
 	hostname, _ := os.Hostname()
+
+	environ := make(map[string]string)
+
+	if ok, _ := strconv.ParseBool(queryParams.Get("env")); ok {
+		for _, env := range os.Environ() {
+			before, after, _ := strings.Cut(env, "=")
+			environ[before] = after
+		}
+	}
 
 	data := Data{
 		Hostname:   hostname,
@@ -245,6 +265,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		Method:     r.Method,
 		Name:       name,
 		RemoteAddr: r.RemoteAddr,
+		Environ:    environ,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

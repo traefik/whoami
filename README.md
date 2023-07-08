@@ -16,9 +16,13 @@ Returns the whoami information (request and network information).
 The optional `wait` query parameter can be provided to tell the server to wait before sending the response.
 The duration is expected in Go's [`time.Duration`](https://golang.org/pkg/time/#ParseDuration) format (e.g. `/?wait=100ms` to wait 100 milliseconds).
 
+The optional `env` query parameter can be set to `true` to add the environment variables to the response.
+
 #### `/api`
 
 Returns the whoami information as JSON.
+
+The optional `env` query parameter can be set to `true` to add the environment variables to the response.
 
 #### `/bench`
 
