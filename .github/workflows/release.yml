@@ -9,22 +9,22 @@ jobs:
     name: Release Process
     runs-on: ubuntu-latest
     env:
-      GO_VERSION: 1.19
+      GO_VERSION: '1.20'
       CGO_ENABLED: 0
 
     steps:
 
-      # https://github.com/marketplace/actions/setup-go-environment
-      - name: Set up Go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
       # https://github.com/marketplace/actions/checkout
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      # https://github.com/marketplace/actions/setup-go-environment
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
       - name: dockerhub-login
         uses: docker/login-action@v1

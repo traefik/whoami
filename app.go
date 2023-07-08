@@ -54,6 +54,7 @@ func init() {
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 }
 
+// Data whoami information.
 type Data struct {
 	Hostname   string      `json:"hostname,omitempty"`
 	IP         []string    `json:"ip,omitempty"`
