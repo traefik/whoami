@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -56,13 +55,14 @@ func init() {
 }
 
 type Data struct {
-	Hostname string      `json:"hostname,omitempty"`
-	IP       []string    `json:"ip,omitempty"`
-	Headers  http.Header `json:"headers,omitempty"`
-	URL      string      `json:"url,omitempty"`
-	Host     string      `json:"host,omitempty"`
-	Method   string      `json:"method,omitempty"`
-	Name     string      `json:"name,omitempty"`
+	Hostname   string      `json:"hostname,omitempty"`
+	IP         []string    `json:"ip,omitempty"`
+	Headers    http.Header `json:"headers,omitempty"`
+	URL        string      `json:"url,omitempty"`
+	Host       string      `json:"host,omitempty"`
+	Method     string      `json:"method,omitempty"`
+	Name       string      `json:"name,omitempty"`
+	RemoteAddr string      `json:"remoteAddr,omitempty"`
 }
 
 func main() {
@@ -164,8 +164,7 @@ func printBinary(s []byte) {
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
-	u, _ := url.Parse(r.URL.String())
-	queryParams := u.Query()
+	queryParams := r.URL.Query()
 
 	size, err := strconv.ParseInt(queryParams.Get("size"), 10, 64)
 	if err != nil {
@@ -206,9 +205,8 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func whoamiHandler(w http.ResponseWriter, req *http.Request) {
-	u, _ := url.Parse(req.URL.String())
-	wait := u.Query().Get("wait")
+func whoamiHandler(w http.ResponseWriter, r *http.Request) {
+	wait := r.URL.Query().Get("wait")
 	if len(wait) > 0 {
 		duration, err := time.ParseDuration(wait)
 		if err == nil {
@@ -227,24 +225,25 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintln(w, "IP:", ip)
 	}
 
-	_, _ = fmt.Fprintln(w, "RemoteAddr:", req.RemoteAddr)
-	if err := req.Write(w); err != nil {
+	_, _ = fmt.Fprintln(w, "RemoteAddr:", r.RemoteAddr)
+	if err := r.Write(w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func apiHandler(w http.ResponseWriter, req *http.Request) {
+func apiHandler(w http.ResponseWriter, r *http.Request) {
 	hostname, _ := os.Hostname()
 
 	data := Data{
-		Hostname: hostname,
-		IP:       getIPs(),
-		Headers:  req.Header,
-		URL:      req.URL.RequestURI(),
-		Host:     req.Host,
-		Method:   req.Method,
-		Name:     name,
+		Hostname:   hostname,
+		IP:         getIPs(),
+		Headers:    r.Header,
+		URL:        r.URL.RequestURI(),
+		Host:       r.Host,
+		Method:     r.Method,
+		Name:       name,
+		RemoteAddr: r.RemoteAddr,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
