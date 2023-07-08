@@ -29,6 +29,14 @@ const (
 	TB
 )
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
 var (
 	cert    string
 	key     string
@@ -43,16 +51,18 @@ func init() {
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
-	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT_NUMBER", "80"), "give me a port number")
+	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT_NUMBER", "8080"), "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+type Data struct {
+	Hostname string      `json:"hostname,omitempty"`
+	IP       []string    `json:"ip,omitempty"`
+	Headers  http.Header `json:"headers,omitempty"`
+	URL      string      `json:"url,omitempty"`
+	Host     string      `json:"host,omitempty"`
+	Method   string      `json:"method,omitempty"`
+	Name     string      `json:"name,omitempty"`
 }
 
 func main() {
@@ -213,20 +223,8 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 	hostname, _ := os.Hostname()
 	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
 
-	ifaces, _ := net.Interfaces()
-	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
-		// handle err
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			_, _ = fmt.Fprintln(w, "IP:", ip)
-		}
+	for _, ip := range getIPs() {
+		_, _ = fmt.Fprintln(w, "IP:", ip)
 	}
 
 	_, _ = fmt.Fprintln(w, "RemoteAddr:", req.RemoteAddr)
@@ -239,40 +237,14 @@ func whoamiHandler(w http.ResponseWriter, req *http.Request) {
 func apiHandler(w http.ResponseWriter, req *http.Request) {
 	hostname, _ := os.Hostname()
 
-	data := struct {
-		Hostname string      `json:"hostname,omitempty"`
-		IP       []string    `json:"ip,omitempty"`
-		Headers  http.Header `json:"headers,omitempty"`
-		URL      string      `json:"url,omitempty"`
-		Host     string      `json:"host,omitempty"`
-		Method   string      `json:"method,omitempty"`
-		Name     string      `json:"name,omitempty"`
-	}{
+	data := Data{
 		Hostname: hostname,
-		IP:       []string{},
+		IP:       getIPs(),
 		Headers:  req.Header,
 		URL:      req.URL.RequestURI(),
 		Host:     req.Host,
 		Method:   req.Method,
 		Name:     name,
-	}
-
-	ifaces, _ := net.Interfaces()
-	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
-		// handle err
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip != nil {
-				data.IP = append(data.IP, ip.String())
-			}
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -318,4 +290,28 @@ func getEnv(key, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func getIPs() []string {
+	var ips []string
+
+	ifaces, _ := net.Interfaces()
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip != nil {
+				ips = append(ips, ip.String())
+			}
+		}
+	}
+
+	return ips
 }
