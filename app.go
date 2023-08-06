@@ -125,8 +125,11 @@ func handle(next http.HandlerFunc, verbose bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next(w, r)
 
-		// <remote_IP_address> - [<timestamp>] "<request_method> <request_path> <request_protocol>" -
-		log.Printf("%s - - [%s] \"%s %s %s\" - -", r.RemoteAddr, time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL.Path, r.Proto)
+		// <remote_IP_address> - - [<timestamp>] "<request_method> <request_path> <request_protocol>" "<http_referer>" "<http_user_agent>" "<x_forwarded_for>"
+		ref := r.Header.Get("Referer"); if ref         == "" { ref = "-" }
+		ua  := r.Header.Get("User-Agent"); if ua       == "" { ua = "-" }
+		xff := r.Header.Get("X-Forwarded-For"); if xff == "" { xff = "-" }
+		log.Printf("%s - - [%s] \"%s %s %s\" \"%s\" \"%s\" \"%s\"", r.RemoteAddr, time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL.Path, r.Proto, ref, ua, xff)
 	})
 }
 
