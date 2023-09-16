@@ -37,12 +37,13 @@ var upgrader = websocket.Upgrader{
 }
 
 var (
-	cert    string
-	key     string
-	ca      string
-	port    string
-	name    string
-	verbose bool
+	cert           string
+	key            string
+	ca             string
+	port           string
+	name           string
+	verbose        bool
+	allowedOrigins string
 )
 
 func init() {
@@ -52,6 +53,7 @@ func init() {
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
 	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT_NUMBER", "80"), "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
+	flag.StringVar(&allowedOrigins, "allowed-origins", getEnv("WHOAMI_ALLOWED_ORIGINS", "*"), "give me a list of allowed clients")
 }
 
 // Data whoami information.
@@ -74,7 +76,7 @@ func main() {
 	mux.Handle("/data", handle(dataHandler, verbose))
 	mux.Handle("/echo", handle(echoHandler, verbose))
 	mux.Handle("/bench", handle(benchHandler, verbose))
-	mux.Handle("/api", handle(apiHandler, verbose))
+	mux.Handle("/api", handle(allowCors(apiHandler), verbose))
 	mux.Handle("/health", handle(healthHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
@@ -127,6 +129,14 @@ func handle(next http.HandlerFunc, verbose bool) http.Handler {
 
 		// <remote_IP_address> - [<timestamp>] "<request_method> <request_path> <request_protocol>" -
 		log.Printf("%s - - [%s] \"%s %s %s\" - -", r.RemoteAddr, time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL.Path, r.Proto)
+	})
+}
+
+func allowCors(handler http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		handler(w, r)
 	})
 }
 
