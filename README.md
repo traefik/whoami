@@ -20,7 +20,7 @@ The optional `env` query parameter can be set to `true` to add the environment v
 
 #### `/api`
 
-Returns the whoami information as JSON. In addition, this endpoint will also print the headers sent by the client request.
+Returns the whoami information (and some extra information) as JSON.
 
 The optional `env` query parameter can be set to `true` to add the environment variables to the response.
 
