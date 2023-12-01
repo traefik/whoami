@@ -23,4 +23,4 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/whoami/whoami .
 
 ENTRYPOINT ["/whoami"]
-EXPOSE 80
+EXPOSE 8000
