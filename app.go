@@ -43,10 +43,12 @@ var (
 	port    string
 	name    string
 	verbose bool
+	no_data bool
 )
 
 func init() {
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
+	flag.BoolVar(&no_data, "no-data", false, "Disable data handler")
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
 	flag.StringVar(&key, "key", "", "give me a key")
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
@@ -166,6 +168,11 @@ func printBinary(s []byte) {
 }
 
 func dataHandler(w http.ResponseWriter, r *http.Request) {
+	if no_data {
+		_, _ = fmt.Fprintln(w, "dataHandler disabled!")
+		return
+	}
+
 	queryParams := r.URL.Query()
 
 	size, err := strconv.ParseInt(queryParams.Get("size"), 10, 64)
