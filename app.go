@@ -234,7 +234,7 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.TLS != nil {
 		for i, cert := range r.TLS.PeerCertificates {
-			fmt.Fprintf(w, "Certificate[%d] Subject: %v\n", i, cert.Subject)
+			_, _ = fmt.Fprintf(w, "Certificate[%d] Subject: %v\n", i, cert.Subject)
 		}
 	}
 
