@@ -1,84 +1,98 @@
-run:
-  timeout: 2m
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  gocyclo:
-    min-complexity: 16
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  misspell:
-    locale: US
-  funlen:
-    lines: -1
-    statements: 40
-  gofumpt:
-    extra-rules: true
-  depguard:
-    rules:
-      main:
-        deny:
-          - pkg: "github.com/instana/testify"
-            desc: not allowed
-          - pkg: "github.com/pkg/errors"
-            desc: Should be replaced by standard lib errors package
-  godox:
-    keywords:
-      - FIXME
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-    disabled-checks:
-      - sloppyReassign
-      - rangeValCopy
-      - octalLiteral
-      - paramTypeCombine # already handle by gofumpt.extra-rules
-    settings:
-      hugeParam:
-        sizeThreshold: 100
-  forbidigo:
-    forbid:
-      - '^print(ln)?$'
-      - '^panic$'
-      - '^spew\.Print(f|ln)?$'
-      - '^spew\.Dump$'
-
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
-    - rowserrcheck # not relevant (SQL)
-    - sqlclosecheck # not relevant (SQL)
-    - cyclop # duplicate of gocyclo
+    - cyclop
     - dupl
+    - err113
     - exhaustive
     - exhaustruct
-    - exportloopref
     - forbidigo
     - gochecknoglobals
     - gochecknoinits
-    - err113
-    - mnd
     - gosec
     - lll
+    - mnd
     - nilnil
     - nlreturn
     - paralleltest
     - prealloc
+    - rowserrcheck
+    - sqlclosecheck
     - testpackage
     - tparallel
     - varnamelen
     - wrapcheck
     - wsl
-
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: github.com/instana/testify
+              desc: not allowed
+            - pkg: github.com/pkg/errors
+              desc: Should be replaced by standard lib errors package
+    forbidigo:
+      forbid:
+        - pattern: ^print(ln)?$
+        - pattern: ^panic$
+        - pattern: ^spew\.Print(f|ln)?$
+        - pattern: ^spew\.Dump$
+    funlen:
+      lines: -1
+      statements: 40
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - sloppyReassign
+        - rangeValCopy
+        - octalLiteral
+        - paramTypeCombine
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      settings:
+        hugeParam:
+          sizeThreshold: 100
+    gocyclo:
+      min-complexity: 16
+    godox:
+      keywords:
+        - FIXME
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    rules:
+      - path: (.+)\.go$
+        text: 'package-comments: should have a package comment'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude:
-    - 'package-comments: should have a package comment'
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

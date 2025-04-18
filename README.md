@@ -59,45 +59,82 @@ Heath check.
 ## Examples
 
 ```console
-$ docker run -d -P --name iamfoo traefik/whoami
+$ docker run -d -p 8080:80 --name iamfoo traefik/whoami
 
-$ docker inspect --format '{{ .NetworkSettings.Ports }}'  iamfoo
-map[80/tcp:[{0.0.0.0 32769}]]
-
-$ curl "http://0.0.0.0:32769"
-Hostname :  6e0030e67d6a
-IP :  127.0.0.1
-IP :  ::1
-IP :  172.17.0.27
-IP :  fe80::42:acff:fe11:1b
+$ curl http://localhost:8080
+Hostname: 9c9c93da54b5
+IP: 127.0.0.1
+IP: ::1
+IP: 172.17.0.2
+RemoteAddr: 172.17.0.1:41040
 GET / HTTP/1.1
-Host: 0.0.0.0:32769
-User-Agent: curl/7.35.0
+Host: localhost:8080
+User-Agent: curl/8.5.0
 Accept: */*
 ```
 
 ```console
 # updates health check status
-$ curl -X POST -d '500' http://localhost:80/health
+$ curl -X POST -d '500' http://localhost:8080/health
 
 # calls the health check
-$ curl -v http://localhost:80/health
-*   Trying ::1:80...
-* TCP_NODELAY set
-* Connected to localhost (::1) port 80 (#0)
+$ curl -v http://localhost:8080/health
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
 > GET /health HTTP/1.1
-> Host: localhost:80
-> User-Agent: curl/7.65.3
+> Host: localhost:8080
+> User-Agent: curl/8.5.0
 > Accept: */*
 > 
-* Mark bundle as not supporting multiuse
 < HTTP/1.1 500 Internal Server Error
-< Date: Mon, 16 Sep 2019 22:52:40 GMT
+< Date: Fri, 18 Apr 2025 13:36:02 GMT
 < Content-Length: 0
 ```
 
 ```console
-docker run -d -P -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/example.cert --key /certs/example.key
+$ openssl req -newkey rsa:4096 \
+    -x509 \
+    -sha256 \
+    -days 3650 \
+    -nodes \
+    -out ./certs/example.crt \
+    -keyout ./certs/example.key
+
+$ docker run -d -p 8080:80 -v ./certs:/certs --name iamfoo traefik/whoami --cert /certs/example.crt --key /certs/example.key
+
+$ curl https://localhost:8080 -k --cert certs/example.crt  --key certs/example.key
+Hostname: 25bc0df47b95
+IP: 127.0.0.1
+IP: ::1
+IP: 172.17.0.2
+RemoteAddr: 172.17.0.1:50278
+Certificate[0] Subject: CN=traefik.io,O=TraefikLabs,L=Lyon,ST=France,C=FR
+GET / HTTP/1.1
+Host: localhost:8080
+User-Agent: curl/8.5.0
+Accept: */*
+```
+
+```console
+$ docker run -d -p 8080:80 --name iamfoo traefik/whoami
+
+$ grpcurl -plaintext -proto grpc.proto localhost:8080 whoami.Whoami/Whoami
+{
+  "hostname": "5a45e21984b4",
+  "iface": [
+    "127.0.0.1",
+    "::1",
+    "172.17.0.2"
+  ]
+}
+
+$ grpcurl -plaintext -proto grpc.proto localhost:8080 whoami.Whoami/Bench
+{
+  "data": 1
+}
 ```
 
 ```yml

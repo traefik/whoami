@@ -15,3 +15,6 @@ check:
 
 image:
 	docker build -t $(IMAGE_NAME) .
+
+protoc:
+	 protoc --proto_path . ./grpc.proto --go-grpc_out=./ --go_out=./

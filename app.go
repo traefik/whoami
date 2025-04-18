@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -17,6 +18,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	grpcWhoami "github.com/traefik/whoami/grpc"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 )
 
 // Units.
@@ -78,16 +83,22 @@ func main() {
 	mux.Handle("/health", handle(healthHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
+	serverGRPC := grpc.NewServer()
+	grpcWhoami.RegisterWhoamiServer(serverGRPC, whoamiServer{})
+	mux.Handle("/whoami.Whoami/", serverGRPC)
+
+	h := handle(mux.ServeHTTP, verbose)
+
 	if cert == "" || key == "" {
 		log.Printf("Starting up on port %s", port)
 
-		log.Fatal(http.ListenAndServe(":"+port, mux))
+		log.Fatal(http.ListenAndServe(":"+port, h2c.NewHandler(h, &http2.Server{})))
 	}
 
 	server := &http.Server{
 		Addr:      ":" + port,
 		TLSConfig: &tls.Config{ClientAuth: tls.RequestClientCert},
-		Handler:   mux,
+		Handler:   h,
 	}
 
 	if ca != "" {
@@ -343,4 +354,39 @@ func getIPs() []string {
 	}
 
 	return ips
+}
+
+type whoamiServer struct {
+	grpcWhoami.UnimplementedWhoamiServer
+}
+
+func (g whoamiServer) Bench(_ context.Context, _ *grpcWhoami.BenchRequest) (*grpcWhoami.BenchReply, error) {
+	return &grpcWhoami.BenchReply{Data: 1}, nil
+}
+
+func (g whoamiServer) Whoami(_ context.Context, _ *grpcWhoami.WhoamiRequest) (*grpcWhoami.WhoamiReply, error) {
+	reply := &grpcWhoami.WhoamiReply{}
+	if name != "" {
+		reply.Name = name
+	}
+
+	reply.Hostname, _ = os.Hostname()
+
+	ifaces, _ := net.Interfaces()
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			reply.Iface = append(reply.Iface, ip.String())
+		}
+	}
+
+	return reply, nil
 }
