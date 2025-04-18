@@ -69,30 +69,16 @@ linters:
       enable-all: true
     misspell:
       locale: US
-  exclusions:
-    generated: lax
-    rules:
-      - path: (.+)\.go$
-        text: 'package-comments: should have a package comment'
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+  exclusions: 
+    presets:
+      - comments
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
 formatters:
   enable:
     - gci
-    - gofmt
     - gofumpt
-    - goimports
   settings:
     gofumpt:
       extra-rules: true
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
