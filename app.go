@@ -43,6 +43,7 @@ var (
 	port    string
 	name    string
 	verbose bool
+	maskIP  bool
 )
 
 func init() {
@@ -52,6 +53,7 @@ func init() {
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
 	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT_NUMBER", "80"), "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
+	flag.BoolVar(&maskIP, "mask-ips", false, "Do not show IPs")
 }
 
 // Data whoami information.
@@ -324,20 +326,23 @@ func getEnv(key, fallback string) string {
 func getIPs() []string {
 	var ips []string
 
-	ifaces, _ := net.Interfaces()
-	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
-		// handle err
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip != nil {
-				ips = append(ips, ip.String())
+	// Mask IPs if the flag is set.
+	if !maskIP {
+		ifaces, _ := net.Interfaces()
+		for _, i := range ifaces {
+			addrs, _ := i.Addrs()
+			// handle err
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				if ip != nil {
+					ips = append(ips, ip.String())
+				}
 			}
 		}
 	}
