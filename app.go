@@ -42,12 +42,14 @@ var upgrader = websocket.Upgrader{
 }
 
 var (
-	cert    string
-	key     string
-	ca      string
-	port    string
-	name    string
-	verbose bool
+	cert               string
+	key                string
+	ca                 string
+	port               string
+	name               string
+	verbose            bool
+	healthCheck        bool
+	healthCheckTimeout time.Duration
 )
 
 func init() {
@@ -57,6 +59,8 @@ func init() {
 	flag.StringVar(&ca, "cacert", "", "give me a CA chain, enforces mutual TLS")
 	flag.StringVar(&port, "port", getEnv("WHOAMI_PORT_NUMBER", "80"), "give me a port number")
 	flag.StringVar(&name, "name", os.Getenv("WHOAMI_NAME"), "give me a name")
+	flag.BoolVar(&healthCheck, "health-check", false, "Check health of service")
+	flag.DurationVar(&healthCheckTimeout, "health-check-timeout", 5 * time.Second, "Timeout for health check")
 }
 
 // Data whoami information.
@@ -88,6 +92,11 @@ func main() {
 	mux.Handle("/whoami.Whoami/", serverGRPC)
 
 	h := handle(mux.ServeHTTP, verbose)
+
+	if healthCheck {
+		exitCode := performHealthCheck()
+		os.Exit(exitCode)
+	}
 
 	if cert == "" || key == "" {
 		log.Printf("Starting up on port %s", port)
@@ -322,6 +331,28 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		defer mutexHealthState.RUnlock()
 		w.WriteHeader(currentHealthState.StatusCode)
 	}
+}
+
+func performHealthCheck() int {
+	client := &http.Client{
+		Timeout: healthCheckTimeout,
+	}
+
+	healthEndpoint := fmt.Sprintf("http://127.0.0.1:%s/health", port)
+	resp, err := client.Get(healthEndpoint)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while attempting to perform health check: %v\n", err)
+		return 1
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("Health check passed\n")
+		return 0
+	}
+	
+	fmt.Fprintf(os.Stderr, "Health check failed with status: %s\n", resp.Status)
+	return 1
 }
 
 func getEnv(key, fallback string) string {
