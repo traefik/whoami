@@ -219,6 +219,21 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func addHeaderFilter(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+
+	if headers, exists := queryParams["header"]; exists {
+		for _, header := range headers {
+			headerName, headerValue, found := strings.Cut(header, "=")
+			if !found {
+				continue
+			}
+
+			w.Header().Add(headerName, headerValue)
+		}
+	}
+}
+
 func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 
@@ -229,6 +244,8 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(duration)
 		}
 	}
+
+	addHeaderFilter(w, r)
 
 	if name != "" {
 		_, _ = fmt.Fprintln(w, "Name:", name)
