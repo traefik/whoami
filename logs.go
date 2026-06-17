@@ -28,11 +28,6 @@ func logError(ctx context.Context, body string, attrs ...otellog.KeyValue) {
 	emit(ctx, otellog.SeverityError, body, attrs...)
 }
 
-// logDebug emits a debug log record through OpenTelemetry.
-func logDebug(ctx context.Context, body string, attrs ...otellog.KeyValue) {
-	emit(ctx, otellog.SeverityDebug, body, attrs...)
-}
-
 // emit builds a log record and emits it. The context carries the active span so
 // records are correlated with the current trace.
 func emit(ctx context.Context, severity otellog.Severity, body string, attrs ...otellog.KeyValue) {

@@ -54,7 +54,7 @@ Heath check.
 | `cacert`  |                      | Give me a CA chain, enforces mutual TLS |
 | `port`    | `WHOAMI_PORT_NUMBER` | Give me a port number. (default: `80`)  |
 | `name`    | `WHOAMI_NAME`        | Give me a name.                         |
-| `verbose` |                      | Enable verbose logging.                 |
+| `verbose` |                      | Enable verbose logging (per-request access logs). |
 
 ## Observability
 
@@ -90,9 +90,10 @@ What gets emitted:
   `otelgrpc`).
 - **Metrics** — standard HTTP server metrics (`http.server.*`), gRPC server metrics
   (`rpc.server.*`), and a custom `whoami.requests` counter labelled by method and status.
-- **Logs** — application logs plus a structured **access log** per request (method, path,
-  status, response size, duration). Access logs are emitted within the request span, so
-  each carries the active trace and span IDs.
+- **Logs** — application logs, plus a structured **access log** per request (method, path,
+  status, response size, duration) when the `verbose` flag is set. Gating access logs on
+  `verbose` keeps whoami quiet by default, matching its original behavior; they are still
+  emitted within the request span, so each carries the active trace and span IDs.
 
 ### Example: ship everything to a collector
 
@@ -107,8 +108,8 @@ $ docker run -d -p 8080:80 --name iamfoo \
     traefik/whoami
 ```
 
-With no `OTEL_*` variables set, whoami simply prints structured logs (including access
-logs) to stdout and ships nothing.
+With no `OTEL_*` variables set, whoami simply prints structured logs to stdout and ships
+nothing. Per-request access logs are added when the `verbose` flag is enabled.
 
 ## Examples
 

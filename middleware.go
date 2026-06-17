@@ -25,20 +25,13 @@ func instrument(route string, handler http.HandlerFunc) http.Handler {
 	)
 }
 
-// accessLog records a structured access-log entry per request and increments the
-// request counter metric. It runs inside the OpenTelemetry span so the emitted
-// log carries the trace and span IDs, tying logs, traces, and metrics together.
+// accessLog increments the request counter metric and, when verbose logging is
+// enabled, records a structured access-log entry per request. Gating the log on
+// the verbose flag keeps whoami quiet by default, matching its original
+// behavior. The handler runs inside the OpenTelemetry span, so the access log
+// carries the trace and span IDs, tying logs, traces, and metrics together.
 func accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if verbose {
-			logDebug(r.Context(), "request received",
-				otellog.String("http.request.method", r.Method),
-				otellog.String("url.path", r.URL.Path),
-				otellog.String("server.address", r.Host),
-				otellog.String("user_agent.original", r.UserAgent()),
-			)
-		}
-
 		start := time.Now()
 		recorder := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 
@@ -48,6 +41,10 @@ func accessLog(next http.Handler) http.Handler {
 			attribute.String("http.request.method", r.Method),
 			attribute.Int("http.response.status_code", recorder.status),
 		))
+
+		if !verbose {
+			return
+		}
 
 		logInfo(r.Context(), "access",
 			otellog.String("network.peer.address", r.RemoteAddr),
