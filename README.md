@@ -56,6 +56,60 @@ Heath check.
 | `name`    | `WHOAMI_NAME`        | Give me a name.                         |
 | `verbose` |                      | Enable verbose logging.                 |
 
+## Observability
+
+whoami is instrumented with [OpenTelemetry](https://opentelemetry.io). It can emit
+**traces**, **metrics**, and **logs** (including per-request access logs), configured
+entirely through the standard `OTEL_*` environment variables.
+
+Each signal is controlled independently by its standard exporter variable:
+
+| Variable                | Default   | Description                                                              |
+|-------------------------|-----------|--------------------------------------------------------------------------|
+| `OTEL_LOGS_EXPORTER`    | `console` | Where logs go. `console` prints to stdout, `otlp` ships them, `none` off. |
+| `OTEL_TRACES_EXPORTER`  | `none`    | Set to `otlp` (or `console`) to emit traces. Off by default.             |
+| `OTEL_METRICS_EXPORTER` | `none`    | Set to `otlp` (or `console`) to emit metrics. Off by default.            |
+
+So **logs print to stdout out of the box**, while traces and metrics are opt-in — you
+turn them on when you have somewhere to send them. (`stdout` is accepted as an alias for
+`console`.)
+
+Endpoint, protocol, headers, service name, and resource attributes use the usual OTel
+variables, for example:
+
+| Variable                       | Description                                                       |
+|--------------------------------|-------------------------------------------------------------------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT`  | OTLP collector endpoint, e.g. `http://collector:4318`.            |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`  | `grpc`, `http/protobuf`, or `http/json`.                          |
+| `OTEL_SERVICE_NAME`            | Service name reported to the backend (default: `whoami`).         |
+| `OTEL_RESOURCE_ATTRIBUTES`     | Extra resource attributes, e.g. `deployment.environment=prod`.    |
+
+What gets emitted:
+
+- **Traces** — a server span per HTTP request (via `otelhttp`) and per gRPC call (via
+  `otelgrpc`).
+- **Metrics** — standard HTTP server metrics (`http.server.*`), gRPC server metrics
+  (`rpc.server.*`), and a custom `whoami.requests` counter labelled by method and status.
+- **Logs** — application logs plus a structured **access log** per request (method, path,
+  status, response size, duration). Access logs are emitted within the request span, so
+  each carries the active trace and span IDs.
+
+### Example: ship everything to a collector
+
+```console
+$ docker run -d -p 8080:80 --name iamfoo \
+    -e OTEL_TRACES_EXPORTER=otlp \
+    -e OTEL_METRICS_EXPORTER=otlp \
+    -e OTEL_LOGS_EXPORTER=otlp \
+    -e OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318 \
+    -e OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+    -e OTEL_SERVICE_NAME=whoami \
+    traefik/whoami
+```
+
+With no `OTEL_*` variables set, whoami simply prints structured logs (including access
+logs) to stdout and ships nothing.
+
 ## Examples
 
 ```console
