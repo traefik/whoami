@@ -12,7 +12,10 @@ jobs:
     name: Main Process
     runs-on: ubuntu-latest
     env:
-      GO_VERSION: stable
+      # golangci-lint v2.1.2 is built with Go 1.24 and panics when type-checking
+      # a newer stdlib, so pin this job to Go 1.24 (the module's go directive).
+      # The Go matrix workflow still builds and tests on stable and oldstable.
+      GO_VERSION: "1.24"
       GOLANGCI_LINT_VERSION: v2.1.2
       CGO_ENABLED: 0
 
