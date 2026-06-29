@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,6 +24,9 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 )
+
+//go:embed openapi.yaml
+var openAPISpec []byte
 
 // Units.
 const (
@@ -81,6 +85,7 @@ func main() {
 	mux.Handle("/bench", handle(benchHandler, verbose))
 	mux.Handle("/api", handle(apiHandler, verbose))
 	mux.Handle("/health", handle(healthHandler, verbose))
+	mux.Handle("/openapi.yaml", handle(openAPIHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
 	serverGRPC := grpc.NewServer()
@@ -146,6 +151,11 @@ func benchHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = fmt.Fprint(w, "1")
+}
+
+func openAPIHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/yaml")
+	_, _ = w.Write(openAPISpec)
 }
 
 func echoHandler(w http.ResponseWriter, r *http.Request) {
