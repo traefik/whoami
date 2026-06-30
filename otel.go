@@ -7,10 +7,10 @@ import (
 	"os"
 
 	"go.opentelemetry.io/contrib/exporters/autoexport"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	logglobal "go.opentelemetry.io/otel/log/global"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -28,11 +28,6 @@ const (
 	// consoleExporter is the standard OTEL_*_EXPORTER value for stdout output.
 	consoleExporter = "console"
 )
-
-// requestCounter counts the HTTP requests handled by whoami, broken down by
-// method and response status code. It is a no-op instrument until metrics are
-// enabled, so it is always safe to call.
-var requestCounter metric.Int64Counter
 
 // setupOTel configures the global OpenTelemetry tracer, meter, and logger
 // providers from the standard OTEL_* environment variables.
@@ -92,18 +87,18 @@ func setupOTel(ctx context.Context) (func(context.Context) error, error) {
 
 	initLogger()
 
-	if err = initInstruments(); err != nil {
-		return nil, errors.Join(err, shutdown(ctx))
-	}
-
 	return shutdown, nil
 }
 
-// newResource describes the running whoami instance. The service name defaults
-// to "whoami" but is overridden by OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES.
+// newResource describes the running whoami instance. service.name defaults to
+// "whoami" and service.version to the build version; both are overridden by
+// OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES.
 func newResource(ctx context.Context) (*resource.Resource, error) {
 	res, err := resource.New(ctx,
-		resource.WithAttributes(attribute.String("service.name", otelServiceName)),
+		resource.WithAttributes(
+			attribute.String("service.name", otelServiceName),
+			attribute.String("service.version", version),
+		),
 		resource.WithFromEnv(),
 		resource.WithTelemetrySDK(),
 		resource.WithHost(),
@@ -152,6 +147,13 @@ func setupMetrics(ctx context.Context, res *resource.Resource) ([]func(context.C
 	)
 	otel.SetMeterProvider(provider)
 
+	// Emit Go runtime metrics (memory, GC, goroutines) alongside the
+	// auto-instrumented HTTP and gRPC metrics.
+	err = runtime.Start(runtime.WithMeterProvider(provider))
+	if err != nil {
+		return nil, fmt.Errorf("starting runtime metrics: %w", err)
+	}
+
 	return []func(context.Context) error{provider.Shutdown}, nil
 }
 
@@ -180,25 +182,6 @@ func setupLogs(ctx context.Context, res *resource.Resource) ([]func(context.Cont
 	logglobal.SetLoggerProvider(provider)
 
 	return []func(context.Context) error{provider.Shutdown}, nil
-}
-
-// initInstruments creates the application-level metrics. The instruments resolve
-// to no-ops when metrics are disabled.
-func initInstruments() error {
-	meter := otel.Meter(otelInstrumentationName)
-
-	counter, err := meter.Int64Counter(
-		"whoami.requests",
-		metric.WithDescription("Total number of HTTP requests handled by whoami."),
-		metric.WithUnit("{request}"),
-	)
-	if err != nil {
-		return fmt.Errorf("creating request counter: %w", err)
-	}
-
-	requestCounter = counter
-
-	return nil
 }
 
 // setEnvDefault sets an environment variable only when it is not already set.

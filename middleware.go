@@ -2,49 +2,48 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"net"
 	"net/http"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	otellog "go.opentelemetry.io/otel/log"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // instrument wraps an HTTP handler with OpenTelemetry tracing and metrics and
-// structured access logging. The span is started first so that each access-log
-// record is correlated with the active trace and span.
+// structured access logging. WithRouteTag records the low-cardinality http.route
+// on the span and the HTTP server metrics; the span is started first so each
+// access-log record is correlated with the active trace and span.
 func instrument(route string, handler http.HandlerFunc) http.Handler {
-	withLog := accessLog(handler)
+	withRoute := otelhttp.WithRouteTag(route, accessLog(handler))
 
-	return otelhttp.NewHandler(withLog, route,
+	return otelhttp.NewHandler(withRoute, route,
 		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
 			return r.Method + " " + route
 		}),
 	)
 }
 
-// accessLog increments the request counter metric and, when verbose logging is
-// enabled, records a structured access-log entry per request. Gating the log on
-// the verbose flag keeps whoami quiet by default, matching its original
-// behavior. The handler runs inside the OpenTelemetry span, so the access log
-// carries the trace and span IDs, tying logs, traces, and metrics together.
+// accessLog records a structured access-log entry per request when verbose
+// logging is enabled. Gating the log on the verbose flag keeps whoami quiet by
+// default, matching its original behavior. The handler runs inside the
+// OpenTelemetry span, so the access log carries the trace and span IDs, tying
+// logs and traces together. Request rate, errors, and duration come from the
+// auto-instrumented HTTP server metrics, so no custom counter is needed here.
 func accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !verbose {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		start := time.Now()
 		recorder := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 
 		next.ServeHTTP(recorder, r)
-
-		requestCounter.Add(r.Context(), 1, metric.WithAttributes(
-			attribute.String("http.request.method", r.Method),
-			attribute.Int("http.response.status_code", recorder.status),
-		))
-
-		if !verbose {
-			return
-		}
 
 		logInfo(r.Context(), "access",
 			otellog.String("network.peer.address", r.RemoteAddr),
@@ -56,6 +55,13 @@ func accessLog(next http.Handler) http.Handler {
 			otellog.Float64("http.server.request.duration", time.Since(start).Seconds()),
 		)
 	})
+}
+
+// recordServerError marks the active server span as failed with a diagnostic
+// message. otelhttp sets the ERROR status for 5xx responses but cannot supply a
+// message, so without this the root span of an error trace carries no detail.
+func recordServerError(ctx context.Context, err error) {
+	trace.SpanFromContext(ctx).SetStatus(codes.Error, err.Error())
 }
 
 // responseRecorder captures the response status code and body size while

@@ -84,12 +84,18 @@ variables, for example:
 | `OTEL_SERVICE_NAME`            | Service name reported to the backend (default: `whoami`).         |
 | `OTEL_RESOURCE_ATTRIBUTES`     | Extra resource attributes, e.g. `deployment.environment=prod`.    |
 
+The telemetry resource reports `service.name` (default `whoami`) and `service.version` (the
+build version), both overridable via `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES`.
+
 What gets emitted:
 
 - **Traces** — a server span per HTTP request (via `otelhttp`) and per gRPC call (via
-  `otelgrpc`).
-- **Metrics** — standard HTTP server metrics (`http.server.*`), gRPC server metrics
-  (`rpc.server.*`), and a custom `whoami.requests` counter labelled by method and status.
+  `otelgrpc`). HTTP spans are named `{method} {route}` and carry the low-cardinality
+  `http.route`; handler failures set an `ERROR` status with a diagnostic message.
+- **Metrics** — HTTP server metrics (`http.server.*`, labelled by `http.route`), gRPC
+  server metrics (`rpc.server.*`), and Go runtime metrics (`process.runtime.go.*`: memory,
+  GC, goroutines). Request rate, errors, and duration are derived from these
+  auto-instrumented metrics, so no redundant custom counter is emitted.
 - **Logs** — application logs, plus a structured **access log** per request (method, path,
   status, response size, duration) when the `verbose` flag is set. Gating access logs on
   `verbose` keeps whoami quiet by default, matching its original behavior; they are still

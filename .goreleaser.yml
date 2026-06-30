@@ -2,6 +2,8 @@ project_name: whoami
 
 builds:
   - binary: whoami
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
     goos:
       - windows
       - darwin

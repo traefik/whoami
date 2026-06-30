@@ -52,6 +52,10 @@ var (
 	verbose bool
 )
 
+// version is the whoami build, reported as the service.version resource
+// attribute. Override it at build time with -ldflags "-X main.version=...".
+var version = "dev"
+
 func init() {
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
@@ -269,6 +273,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := io.Copy(w, content); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -305,6 +310,7 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := r.Write(w); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -344,6 +350,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
