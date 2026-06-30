@@ -5,22 +5,24 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
 	grpcWhoami "github.com/traefik/whoami/grpc"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	otellog "go.opentelemetry.io/otel/log"
 	"google.golang.org/grpc"
 )
 
@@ -50,6 +52,10 @@ var (
 	verbose bool
 )
 
+// version is the whoami build, reported as the service.version resource
+// attribute. Override it at build time with -ldflags "-X main.version=...".
+var version = "dev"
+
 func init() {
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
 	flag.StringVar(&cert, "cert", "", "give me a certificate")
@@ -73,47 +79,113 @@ type Data struct {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "whoami terminated:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	flag.Parse()
 
-	mux := http.NewServeMux()
-	mux.Handle("/data", handle(dataHandler, verbose))
-	mux.Handle("/echo", handle(echoHandler, verbose))
-	mux.Handle("/bench", handle(benchHandler, verbose))
-	mux.Handle("/api", handle(apiHandler, verbose))
-	mux.Handle("/health", handle(healthHandler, verbose))
-	mux.Handle("/", handle(whoamiHandler, verbose))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	serverGRPC := grpc.NewServer()
+	shutdownOTel, err := setupOTel(ctx)
+	if err != nil {
+		return fmt.Errorf("setting up OpenTelemetry: %w", err)
+	}
+	defer shutdownOTelWithTimeout(shutdownOTel)
+
+	server := &http.Server{Addr: ":" + port, Handler: newMux()}
+
+	if cert == "" || key == "" {
+		// Accept HTTP/1.1 and HTTP/2 cleartext (h2c) so the gRPC endpoint keeps
+		// working without TLS, using the native net/http support added in Go 1.24.
+		protocols := new(http.Protocols)
+		protocols.SetHTTP1(true)
+		protocols.SetUnencryptedHTTP2(true)
+		server.Protocols = protocols
+
+		logInfo(ctx, "Starting up", otellog.String("port", port))
+
+		return startServer(ctx, server, server.ListenAndServe)
+	}
+
+	server.TLSConfig = &tls.Config{ClientAuth: tls.RequestClientCert}
+	if ca != "" {
+		server.TLSConfig, err = setupMutualTLS(ca)
+		if err != nil {
+			return err
+		}
+	}
+
+	logInfo(ctx, "Starting up with TLS", otellog.String("port", port))
+
+	return startServer(ctx, server, func() error { return server.ListenAndServeTLS(cert, key) })
+}
+
+// newMux builds the whoami request router with every HTTP route instrumented for
+// OpenTelemetry tracing, metrics, and access logging, plus the gRPC endpoint.
+func newMux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.Handle("/data", instrument("/data", dataHandler))
+	mux.Handle("/echo", accessLog(http.HandlerFunc(echoHandler)))
+	mux.Handle("/bench", instrument("/bench", benchHandler))
+	mux.Handle("/api", instrument("/api", apiHandler))
+	mux.Handle("/health", instrument("/health", healthHandler))
+	mux.Handle("/", instrument("/", whoamiHandler))
+
+	serverGRPC := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
 	grpcWhoami.RegisterWhoamiServer(serverGRPC, whoamiServer{})
 	mux.Handle("/whoami.Whoami/", serverGRPC)
 
-	h := handle(mux.ServeHTTP, verbose)
-
-	if cert == "" || key == "" {
-		log.Printf("Starting up on port %s", port)
-
-		log.Fatal(http.ListenAndServe(":"+port, h2c.NewHandler(h, &http2.Server{})))
-	}
-
-	server := &http.Server{
-		Addr:      ":" + port,
-		TLSConfig: &tls.Config{ClientAuth: tls.RequestClientCert},
-		Handler:   h,
-	}
-
-	if ca != "" {
-		server.TLSConfig = setupMutualTLS(ca)
-	}
-
-	log.Printf("Starting up with TLS on port %s", port)
-
-	log.Fatal(server.ListenAndServeTLS(cert, key))
+	return mux
 }
 
-func setupMutualTLS(ca string) *tls.Config {
+// startServer runs listen until it fails or the context is canceled (SIGINT or
+// SIGTERM), then drains in-flight requests so the deferred telemetry flush runs.
+func startServer(ctx context.Context, server *http.Server, listen func() error) error {
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- listen()
+	}()
+
+	select {
+	case err := <-errCh:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+
+		return fmt.Errorf("serving: %w", err)
+	case <-ctx.Done():
+		// The signal already canceled ctx, so derive a fresh deadline that keeps
+		// ctx's values but not its cancellation to actually drain connections.
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+
+		logInfo(shutdownCtx, "Shutting down")
+
+		return server.Shutdown(shutdownCtx)
+	}
+}
+
+// shutdownOTelWithTimeout flushes and stops the telemetry providers, bounding the
+// flush so a stuck exporter cannot hang shutdown.
+func shutdownOTelWithTimeout(shutdown func(context.Context) error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := shutdown(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "error during OpenTelemetry shutdown:", err)
+	}
+}
+
+func setupMutualTLS(ca string) (*tls.Config, error) {
 	clientCACert, err := os.ReadFile(ca)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("reading CA chain: %w", err)
 	}
 
 	clientCertPool := x509.NewCertPool()
@@ -126,20 +198,7 @@ func setupMutualTLS(ca string) *tls.Config {
 		MinVersion:               tls.VersionTLS12,
 	}
 
-	return tlsConfig
-}
-
-func handle(next http.HandlerFunc, verbose bool) http.Handler {
-	if !verbose {
-		return next
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next(w, r)
-
-		// <remote_IP_address> - [<timestamp>] "<request_method> <request_path> <request_protocol>" -
-		log.Printf("%s - - [%s] \"%s %s %s\" - -", r.RemoteAddr, time.Now().Format("02/Jan/2006:15:04:05 -0700"), r.Method, r.URL.Path, r.Proto)
-	})
+	return tlsConfig, nil
 }
 
 func benchHandler(w http.ResponseWriter, _ *http.Request) {
@@ -151,7 +210,7 @@ func benchHandler(w http.ResponseWriter, _ *http.Request) {
 func echoHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		logError(r.Context(), "WebSocket upgrade failed", otellog.String("error", err.Error()))
 		return
 	}
 
@@ -214,6 +273,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := io.Copy(w, content); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -250,6 +310,7 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := r.Write(w); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -289,6 +350,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		recordServerError(r.Context(), err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
