@@ -9,12 +9,16 @@ Tiny Go webserver that prints OS information and HTTP request to output.
 
 ### Paths
 
-#### `/[?wait=d]`
+#### `/[?wait=d|header=key=value[&header=key=value...]]`
 
 Returns the whoami information (request and network information).
 
 The optional `wait` query parameter can be provided to tell the server to wait before sending the response.
 The duration is expected in Go's [`time.Duration`](https://golang.org/pkg/time/#ParseDuration) format (e.g. `/?wait=100ms` to wait 100 milliseconds).
+
+The optional `header` query parameter can be provided to tell the server to add a certain header when sending
+the response. The query param may be passed multiple times (e.g.
+`/?header=Cache-Control=no-cache&header=Content-Type=application%2Fjson`).
 
 The optional `env` query parameter can be set to `true` to add the environment variables to the response.
 
