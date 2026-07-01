@@ -1,0 +1,260 @@
+openapi: 3.2.0
+info:
+  title: whoami API
+  description: |
+    OpenAPI specification for whoami, a tiny Go web server that echoes back
+    request information.
+
+    This spec describes the HTTP surface of whoami. The server also exposes a
+    WebSocket echo endpoint (`/echo`) and a gRPC service (`/whoami.Whoami/`),
+    neither of which is modeled by OpenAPI, so both are omitted here.
+  version: 1.0.0
+  license:
+    name: Apache-2.0
+    url: https://github.com/traefik/whoami/blob/master/LICENSE
+  contact:
+    name: Traefik Labs
+    url: https://github.com/traefik/whoami
+servers:
+  - url: http://localhost
+    description: Local whoami instance
+tags:
+  - name: info
+    description: Endpoints that return request information.
+  - name: load
+    description: Endpoints useful for benchmarking and load testing.
+  - name: health
+    description: Health check control.
+paths:
+  /:
+    get:
+      operationId: whoami
+      tags:
+        - info
+      summary: Echo request information as plain text
+      description: |
+        Returns the server hostname, its IP addresses, the client `RemoteAddr`,
+        any presented client-certificate subjects (when mutual TLS is used), and
+        the raw incoming request (request line and headers).
+
+        When the `-name` flag or `WHOAMI_NAME` environment variable is set, a
+        `Name:` line is prepended to the output.
+      parameters:
+        - $ref: '#/components/parameters/Wait'
+        - $ref: '#/components/parameters/Env'
+      responses:
+        '200':
+          description: Request information.
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                Hostname: whoami-5b8f9c7d4-abcde
+                IP: 127.0.0.1
+                IP: 10.42.0.17
+                RemoteAddr: 10.42.0.1:54321
+                GET / HTTP/1.1
+                Host: localhost
+                User-Agent: curl/8.4.0
+                Accept: */*
+  /api:
+    get:
+      operationId: api
+      tags:
+        - info
+      summary: Echo request information as JSON
+      description: Returns the same request information as `/`, encoded as JSON.
+      parameters:
+        - $ref: '#/components/parameters/Env'
+      responses:
+        '200':
+          description: Request information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data'
+  /bench:
+    get:
+      operationId: bench
+      tags:
+        - load
+      summary: Minimal benchmarking endpoint
+      description: Returns the constant string `1`. Useful for throughput benchmarks.
+      responses:
+        '200':
+          description: The constant string `1`.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: '1'
+  /data:
+    get:
+      operationId: data
+      tags:
+        - load
+      summary: Return a payload of a requested size
+      description: |
+        Returns a response body of the requested size, useful for testing
+        bandwidth and large transfers. The size is `size * unit` bytes.
+      parameters:
+        - name: size
+          in: query
+          description: Number of units to return. Negative values are treated as `0`.
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 0
+          example: 10
+        - name: unit
+          in: query
+          description: |
+            Unit multiplier applied to `size` (case-insensitive). When omitted or
+            unrecognized, `size` is interpreted as a raw number of bytes.
+          required: false
+          schema:
+            type: string
+            enum: [KB, MB, GB, TB]
+          example: KB
+        - name: attachment
+          in: query
+          description: |
+            When `true`, the response is served as a downloadable file
+            (`Content-Disposition: Attachment`, filename `data.txt`).
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: A payload of the requested size.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /health:
+    get:
+      operationId: getHealth
+      tags:
+        - health
+      summary: Health check
+      description: |
+        Returns the currently configured health status code (default `200`).
+        The code can be changed at runtime with `POST /health`.
+      responses:
+        '200':
+          description: The configured health status code (default).
+        default:
+          description: The health status code previously set via `POST /health`.
+    post:
+      operationId: setHealth
+      tags:
+        - health
+      summary: Set the health check status code
+      description: |
+        Sets the HTTP status code that subsequent `GET /health` requests return.
+        The request body is a bare JSON integer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              description: HTTP status code to return for future health checks.
+              example: 500
+      responses:
+        '200':
+          description: The health status code was updated.
+        '400':
+          description: The request body could not be decoded as an integer.
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  parameters:
+    Wait:
+      name: wait
+      in: query
+      description: |
+        Delay the response by the given Go duration (for example `100ms`, `2s`).
+        Invalid values are ignored.
+      required: false
+      schema:
+        type: string
+      example: 200ms
+    Env:
+      name: env
+      in: query
+      description: When `true`, include the server's environment variables in the response.
+      required: false
+      schema:
+        type: boolean
+        default: false
+  responses:
+    InternalServerError:
+      description: Internal server error.
+      content:
+        text/plain:
+          schema:
+            type: string
+  schemas:
+    Data:
+      type: object
+      description: Request and server information returned by `/api`.
+      properties:
+        hostname:
+          type: string
+          description: Hostname of the server that handled the request.
+          example: whoami-5b8f9c7d4-abcde
+        ip:
+          type: array
+          description: IP addresses bound to the server's network interfaces.
+          items:
+            type: string
+          example:
+            - 127.0.0.1
+            - 10.42.0.17
+        headers:
+          type: object
+          description: Request headers, each mapped to a list of values.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            Accept:
+              - '*/*'
+            User-Agent:
+              - curl/8.4.0
+        url:
+          type: string
+          description: Request URI (path and query) seen by the server.
+          example: /api
+        host:
+          type: string
+          description: Host header of the request.
+          example: localhost
+        method:
+          type: string
+          description: HTTP method of the request.
+          example: GET
+        name:
+          type: string
+          description: Configured server name (`-name` flag or `WHOAMI_NAME`), when set.
+          example: whoami-eu
+        remoteAddr:
+          type: string
+          description: Address of the client that made the request.
+          example: 10.42.0.1:54321
+        environ:
+          type: object
+          description: Server environment variables. Only present when `env=true`.
+          additionalProperties:
+            type: string
