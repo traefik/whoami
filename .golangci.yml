@@ -11,10 +11,12 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - gosec
+    - iotamixing
     - lll
     - mnd
     - nilnil
     - nlreturn
+    - noinlineerr
     - paralleltest
     - prealloc
     - rowserrcheck
@@ -24,6 +26,7 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+    - wsl_v5
   settings:
     depguard:
       rules:
