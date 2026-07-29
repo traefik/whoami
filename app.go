@@ -20,8 +20,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	grpcWhoami "github.com/traefik/whoami/grpc"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 )
 
@@ -97,7 +95,17 @@ func main() {
 	if cert == "" || key == "" {
 		log.Printf("Starting up on port %s", port)
 
-		log.Fatal(http.ListenAndServe(":"+port, h2c.NewHandler(h, &http2.Server{})))
+		var protocols http.Protocols
+		protocols.SetHTTP1(true)
+		protocols.SetUnencryptedHTTP2(true)
+
+		server := &http.Server{
+			Addr:      ":" + port,
+			Handler:   h,
+			Protocols: &protocols,
+		}
+
+		log.Fatal(server.ListenAndServe())
 	}
 
 	server := &http.Server{
