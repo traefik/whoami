@@ -1,3 +1,5 @@
+version: 2
+
 project_name: whoami
 
 builds:
@@ -12,6 +14,9 @@ builds:
       - arm64
     goarm:
       - '7'
+    ignore:
+      - goos: windows
+        goarch: arm
 
 changelog:
   sort: asc
@@ -27,10 +32,10 @@ changelog:
 archives:
   - id: whoami
     name_template: '{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm}}v{{ .Arm }}{{ end }}'
-    format: tar.gz
+    formats: [ 'tar.gz' ]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ 'zip' ]
     files:
       - LICENSE
 
