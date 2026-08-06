@@ -47,14 +47,14 @@ Heath check.
 
 ### Flags
 
-| Flag      | Env var              | Description                             |
-|-----------|----------------------|-----------------------------------------|
-| `cert`    |                      | Give me a certificate.                  |
-| `key`     |                      | Give me a key.                          |
-| `cacert`  |                      | Give me a CA chain, enforces mutual TLS |
-| `port`    | `WHOAMI_PORT_NUMBER` | Give me a port number. (default: `80`)  |
-| `name`    | `WHOAMI_NAME`        | Give me a name.                         |
-| `verbose` |                      | Enable verbose logging.                 |
+| Flag      | Env var                     | Description                             |
+|-----------|-----------------------------|-----------------------------------------|
+| `cert`    |                             | Give me a certificate.                  |
+| `key`     |                             | Give me a key.                          |
+| `cacert`  |                             | Give me a CA chain, enforces mutual TLS |
+| `port`    | `WHOAMI_PORT_NUMBER`,`PORT` | Give me a port number. (default: `80`)  |
+| `name`    | `WHOAMI_NAME`               | Give me a name.                         |
+| `verbose` |                             | Enable verbose logging.                 |
 
 ## Examples
 
